@@ -1,0 +1,4101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Malaysia Car Registrations Dashboard — 2000-2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg-primary: #f5f6f8;
+  --bg-card: #ffffff;
+  --bg-header: #0B1D51;   /* EON navy */
+  --bg-header-2: #16307A;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-on-dark: #ffffff;
+  --color-1: #1B3F91;    /* EON blue */
+  --color-2: #f97316;
+  --color-3: #10b981;
+  --color-4: #E32119;    /* EON red */
+  --color-5: #8b5cf6;
+  --color-6: #f59e0b;
+  --color-7: #06b6d4;
+  --color-8: #ec4899;
+  --positive: #10b981;
+  --negative: #ef4444;
+  --border: #e5e7eb;
+  --gap: 16px;
+  --radius: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-size: 14px;
+}
+.dashboard-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: var(--gap);
+}
+/* Sticky top — keeps the dark header and the KPI cards visible while
+   the user scrolls the rest of the dashboard. */
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg-primary);
+  /* Negative left/right + matching padding bleed the sticky band over the
+     container's normal padding so the dark header still touches the edges
+     of the dashboard container. */
+  margin: calc(-1 * var(--gap)) calc(-1 * var(--gap)) 0;
+  padding: var(--gap) var(--gap) 6px;
+}
+.sticky-top.is-scrolled {
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid var(--border);
+}
+.dashboard-header {
+  background: linear-gradient(135deg, var(--bg-header) 0%, var(--bg-header-2) 100%);
+  color: var(--text-on-dark);
+  padding: 16px 22px;
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.dashboard-header .title-group { display: flex; flex-direction: column; gap: 4px; }
+.dashboard-header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.dashboard-header .subtitle { font-size: 13px; color: rgba(255,255,255,0.7); }
+.filters { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-group label { font-size: 11px; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.filter-group select {
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-on-dark);
+  font-size: 13px;
+  min-width: 120px;
+  cursor: pointer;
+}
+.filter-group select:hover { background: rgba(255,255,255,0.14); }
+.filter-group select option { background: var(--bg-header); color: var(--text-on-dark); }
+.btn-reset {
+  padding: 7px 14px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-on-dark);
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-reset:hover { background: rgba(255,255,255,0.12); }
+
+/* Multi-select dropdown */
+.multi-select { position: relative; }
+.ms-button {
+  padding: 7px 28px 7px 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-on-dark);
+  font-size: 13px;
+  min-width: 180px;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ms-button:hover { background: rgba(255,255,255,0.14); }
+.ms-button::after {
+  content: '';
+  position: absolute;
+  right: 10px; top: 50%;
+  width: 6px; height: 6px;
+  border-right: 1.5px solid rgba(255,255,255,0.7);
+  border-bottom: 1.5px solid rgba(255,255,255,0.7);
+  transform: translateY(-70%) rotate(45deg);
+}
+.ms-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 240px;
+  max-width: 320px;
+  background: #fff;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+  z-index: 50;
+  overflow: hidden;
+}
+.ms-dropdown[hidden] { display: none; }
+.ms-search {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  outline: none;
+}
+.ms-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #fafafa;
+}
+.ms-actions button {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.ms-actions button:hover { background: #f3f4f6; }
+.ms-actions.ms-groups {
+  border-top: 0;
+  padding-top: 6px;
+  padding-bottom: 10px;
+  background: #fafafa;
+}
+.ms-actions.ms-groups button {
+  flex: 1;
+  background: #eef2f7;
+  border-color: #d6deea;
+  font-weight: 600;
+  color: var(--color-1);
+}
+.ms-actions.ms-groups button:hover {
+  background: var(--color-1);
+  border-color: var(--color-1);
+  color: #fff;
+}
+.ms-options {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+.ms-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary) !important;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.ms-option span { color: var(--text-primary); }
+.ms-option:hover { background: #eef2f7; }
+.ms-option input[type="checkbox"] { margin: 0; cursor: pointer; width: 15px; height: 15px; accent-color: var(--color-1); }
+.ms-option .ms-count { margin-left: auto; color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 400; }
+.ms-empty { padding: 12px; color: var(--text-secondary); font-size: 13px; text-align: center; }
+.ms-search { color: var(--text-primary); }
+.ms-search::placeholder { color: var(--text-secondary); }
+.ms-actions button { color: var(--text-primary); font-weight: 500; }
+
+/* Insights cards */
+.insights-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 6px 2px 10px;
+  flex-wrap: wrap;
+}
+.insights-header .section-title { margin: 0; }
+.insights-header .insights-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+.insight-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.insight-card.notable::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--color-1);
+}
+.insight-card.notable-neg::before { background: var(--color-4); }
+.insight-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.insight-brand {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.insight-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-top: 1px;
+}
+.insight-volume {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: #f3f4f6;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.insight-narrative {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+.insight-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.insight-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.insight-metric-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+}
+.insight-metric-value {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.insight-metric-value.pos { color: var(--positive); }
+.insight-metric-value.neg { color: var(--negative); }
+.insight-metric-value.neutral { color: var(--text-secondary); }
+.insight-metric-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+/* Secondary (top non-focus) insights — slightly muted style */
+.insights-grid-secondary {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+.insights-grid-secondary .insight-card {
+  padding: 13px 15px;
+  gap: 8px;
+  background: #fafbfd;
+}
+.insights-grid-secondary .insight-brand { font-size: 14px; }
+.insights-grid-secondary .insight-narrative { font-size: 12px; }
+.insights-grid-secondary .insight-metric-value { font-size: 14px; }
+.insights-grid-secondary .insight-metrics { padding-top: 8px; gap: 10px; }
+
+/* Chart mode toggle */
+.chart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.chart-header-row .chart-titles h3 { margin-bottom: 2px; }
+.chart-header-row .chart-titles .chart-sub { margin-bottom: 0; }
+.toggle-group {
+  display: inline-flex;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 3px;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.toggle-group button {
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.toggle-group button.active {
+  background: #fff;
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 0;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.kpi-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.kpi-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 6px 2px 10px;
+}
+
+/* Collapsible sections */
+.collapsible-section { margin-bottom: 0; }
+.collapsible-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  margin: 6px 2px 10px;
+  flex-wrap: wrap;
+  border-radius: 4px;
+  padding: 2px 4px;
+  transition: background 0.15s ease;
+}
+.collapsible-header .section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.collapsible-header .chevron {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  transition: transform 0.2s ease;
+  width: 10px;
+  text-align: center;
+}
+.collapsible-section.collapsed .chevron { transform: rotate(-90deg); }
+.collapsible-section.collapsed .collapsible-body { display: none; }
+.collapsible-header:hover { background: rgba(15, 23, 42, 0.04); }
+.collapsible-header:hover .section-title { color: var(--text-primary); }
+/* Collapse-all controls */
+.collapse-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0 2px 6px;
+}
+.collapse-controls button {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 9px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.collapse-controls button:hover { color: var(--text-primary); background: #f3f4f6; }
+
+.chart-row {
+  display: grid;
+  gap: var(--gap);
+  margin-bottom: var(--gap);
+}
+.chart-row.row-a { grid-template-columns: 2fr 1fr; }
+.chart-row.row-b { grid-template-columns: 1.4fr 1fr 1fr; }
+.chart-row.row-c { grid-template-columns: 1fr 3fr; }
+.chart-row.row-full { grid-template-columns: 1fr; }
+@media (max-width: 1100px) {
+  .chart-row.row-a, .chart-row.row-b, .chart-row.row-c { grid-template-columns: 1fr; }
+}
+
+.chart-container {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+.chart-container h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.chart-container .chart-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+.chart-canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 260px;
+}
+
+.table-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px 22px;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  overflow-x: auto;
+}
+.table-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.table-section .chart-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; }
+/* Scrollable container for the model table when a single brand has many models
+   or when the annual / monthly view spreads horizontally. */
+.models-scroll { max-height: 540px; overflow: auto; }
+.models-scroll table { width: 100%; }
+.models-scroll thead th { position: sticky; top: 0; background: var(--bg-card); z-index: 2; }
+.data-table-compact thead th, .data-table-compact tbody td { padding: 6px 8px; font-size: 12px; }
+.data-table .muted { color: #c7cbd1; }
+.data-table tr.row-footer td { border-top: 2px solid var(--border); background: #fafbfc; }
+.hidden-years-note { font-size: 11px; color: var(--text-secondary); font-style: italic; margin-top: 8px; padding: 0 4px; }
+/* Freeze the first 2–3 columns (#, optional Maker, Model) when the table
+   scrolls horizontally, so the row label is always visible. */
+/* Freeze the row label columns when scrolling horizontally.
+   The fixed widths below let us compute the `left` offsets so each
+   sticky column lines up flush against the one before it. */
+.models-scroll table th:nth-child(1),
+.models-scroll table td:nth-child(1) {
+  position: sticky; left: 0; background: var(--bg-card); z-index: 3;
+  min-width: 42px; width: 42px;
+}
+/* Multi-maker mode: # | Maker | Model | ... → freeze first 3 */
+.models-scroll table:not(.single-maker) th:nth-child(2),
+.models-scroll table:not(.single-maker) td:nth-child(2) {
+  position: sticky; left: 42px; background: var(--bg-card); z-index: 3;
+  min-width: 130px; max-width: 130px;
+}
+.models-scroll table:not(.single-maker) th:nth-child(3),
+.models-scroll table:not(.single-maker) td:nth-child(3) {
+  position: sticky; left: 172px; background: var(--bg-card); z-index: 3;
+  min-width: 170px; max-width: 200px;
+  box-shadow: 6px 0 8px -6px rgba(15, 23, 42, 0.1);
+}
+/* Single-maker mode: # | Model | ... → freeze first 2 */
+.models-scroll table.single-maker th:nth-child(2),
+.models-scroll table.single-maker td:nth-child(2) {
+  position: sticky; left: 42px; background: var(--bg-card); z-index: 3;
+  min-width: 170px; max-width: 220px;
+  box-shadow: 6px 0 8px -6px rgba(15, 23, 42, 0.1);
+}
+/* Header cells (sticky-top + sticky-left) need to win against body cells */
+.models-scroll thead th:nth-child(1),
+.models-scroll thead th:nth-child(2),
+.models-scroll thead th:nth-child(3) { z-index: 4; }
+/* Keep the footer row's slightly-different background for the frozen cells */
+.models-scroll table tr.row-footer td:nth-child(1),
+.models-scroll table tr.row-footer td:nth-child(2),
+.models-scroll table tr.row-footer td:nth-child(3) { background: #fafbfc; }
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table thead th {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+.data-table thead th:hover { color: var(--text-primary); background: #fafafa; }
+.data-table thead th.numeric { text-align: right; }
+.data-table tbody td { padding: 9px 12px; border-bottom: 1px solid #f1f3f5; }
+.data-table tbody td.numeric { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table tbody tr:hover { background: #fafbfc; }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.bar-cell { position: relative; }
+.bar-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(27, 63, 145, 0.10);
+  border-right: 2px solid rgba(227, 33, 25, 0.55);
+  z-index: 0;
+}
+.bar-cell span { position: relative; z-index: 1; }
+
+/* Year selects inside cards, leaderboard badges, model compare */
+.card-select {
+  padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px;
+  background: #fff; color: var(--text-primary); font-size: 12px; font-weight: 500; cursor: pointer;
+}
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 11px; font-weight: 700; background: #f3f4f6; color: var(--text-secondary);
+}
+.rank-badge.r1 { background: #fde68a; color: #92400e; }
+.rank-badge.r2 { background: #e5e7eb; color: #374151; }
+.rank-badge.r3 { background: #fcd9bd; color: #9a3412; }
+.compare-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+.compare-search-wrap { position: relative; min-width: 280px; }
+.compare-search {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+  font-size: 13px; outline: none; color: var(--text-primary);
+}
+.compare-search:focus { border-color: var(--color-1); }
+.compare-search::placeholder { color: var(--text-secondary); }
+.compare-suggest {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  max-height: 280px; overflow-y: auto; background: #fff;
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18); z-index: 40;
+}
+.compare-suggest[hidden] { display: none; }
+.cs-item { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.cs-item:hover { background: #eef2f7; }
+.cs-item .cs-n { color: var(--text-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.compare-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.compare-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff;
+}
+.compare-chip button {
+  border: none; background: rgba(255,255,255,0.3); color: #fff; border-radius: 50%;
+  width: 15px; height: 15px; font-size: 9px; cursor: pointer; line-height: 1; padding: 0;
+}
+.compare-chip button:hover { background: rgba(0,0,0,0.25); }
+
+/* Brand-grouped model table subtotals */
+.data-table tr.row-brand-subtotal td {
+  background: #eef2f7; border-top: 2px solid var(--border);
+  font-weight: 600; font-size: 12px;
+}
+.models-scroll table tr.row-brand-subtotal td:nth-child(1),
+.models-scroll table tr.row-brand-subtotal td:nth-child(2),
+.models-scroll table tr.row-brand-subtotal td:nth-child(3) { background: #eef2f7; }
+
+/* Brand compare: clickable maker names + floating tray */
+.mk-link { cursor: pointer; border-bottom: 1px dashed #c7cbd1; }
+.mk-link:hover { color: var(--color-1); border-bottom-color: var(--color-1); }
+.mk-link.in-cmp { color: var(--color-1); font-weight: 600; border-bottom: 1px solid var(--color-1); }
+#brand-tray {
+  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 80; display: flex; align-items: center; gap: 8px;
+  background: var(--bg-header); color: #fff; border-radius: 999px;
+  padding: 8px 10px 8px 16px; box-shadow: 0 10px 30px rgba(15,23,42,0.35);
+  font-size: 12px; max-width: 92vw; flex-wrap: wrap;
+}
+#brand-tray[hidden] { display: none; }
+#brand-tray .bt-label { font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; color: rgba(255,255,255,0.7); }
+#brand-tray .compare-chip { padding: 4px 10px; }
+#brand-tray .bt-btn {
+  border: none; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+#brand-tray #bt-go { background: var(--color-1); color: #fff; }
+#brand-tray #bt-go:hover { background: #1d4ed8; }
+#brand-tray #bt-clear { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.85); }
+#brand-tray #bt-clear:hover { background: rgba(255,255,255,0.22); }
+.brand-stats-table th:first-child { width: 160px; }
+.brand-stats-table td { vertical-align: top; }
+.brand-stats-table .bs-top-models { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+.brand-stats-table .bs-brand-head { font-size: 13px; font-weight: 700; }
+
+/* Section panel rail — hideaway boxes on the right edge */
+#panel-rail {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+  z-index: 70; display: flex; flex-direction: column; gap: 6px;
+  pointer-events: none;
+}
+.rail-group { position: relative; pointer-events: auto; display: flex; justify-content: flex-end; }
+.rail-tab {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  background: var(--bg-header); color: rgba(255,255,255,0.85);
+  font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase;
+  padding: 12px 6px; border-radius: 6px 0 0 6px; cursor: pointer; user-select: none;
+  max-height: 170px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  box-shadow: -2px 2px 8px rgba(15,23,42,0.18);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rail-group:hover .rail-tab, .rail-group.pinned .rail-tab { background: var(--color-1); color: #fff; }
+.rail-flyout {
+  position: absolute; right: 100%; top: 50%;
+  transform: translateY(-50%) translateX(10px);
+  min-width: 240px; max-width: 320px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+  padding: 10px 0 6px;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.rail-group:hover .rail-flyout, .rail-group.pinned .rail-flyout {
+  opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0);
+}
+.rail-flyout h4 {
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 0 14px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.rail-check {
+  display: flex; gap: 10px; align-items: center;
+  padding: 8px 14px; font-size: 13px; cursor: pointer;
+  color: var(--text-primary); text-transform: none; letter-spacing: 0; font-weight: 500;
+}
+.rail-check:hover { background: #eef2f7; }
+.rail-check input { accent-color: var(--color-1); width: 15px; height: 15px; cursor: pointer; margin: 0; flex-shrink: 0; }
+.rail-check .rc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail-check.unchecked .rc-label { color: var(--text-secondary); }
+@media (max-width: 900px) { #panel-rail { display: none; } }
+.dashboard-footer {
+  padding: 14px 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+  <div class="sticky-top">
+  <header class="dashboard-header">
+    <div style="display:flex;align-items:center;gap:18px">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN0AAABYCAYAAABxufJxAAAKMWlDQ1BJQ0MgUHJvZmlsZQAAeJydlndUU9kWh8+9N71QkhCKlNBraFICSA29SJEuKjEJEErAkAAiNkRUcERRkaYIMijggKNDkbEiioUBUbHrBBlE1HFwFBuWSWStGd+8ee/Nm98f935rn73P3Wfvfda6AJD8gwXCTFgJgAyhWBTh58WIjYtnYAcBDPAAA2wA4HCzs0IW+EYCmQJ82IxsmRP4F726DiD5+yrTP4zBAP+flLlZIjEAUJiM5/L42VwZF8k4PVecJbdPyZi2NE3OMErOIlmCMlaTc/IsW3z2mWUPOfMyhDwZy3PO4mXw5Nwn4405Er6MkWAZF+cI+LkyviZjg3RJhkDGb+SxGXxONgAoktwu5nNTZGwtY5IoMoIt43kA4EjJX/DSL1jMzxPLD8XOzFouEiSniBkmXFOGjZMTi+HPz03ni8XMMA43jSPiMdiZGVkc4XIAZs/8WRR5bRmyIjvYODk4MG0tbb4o1H9d/JuS93aWXoR/7hlEH/jD9ld+mQ0AsKZltdn6h21pFQBd6wFQu/2HzWAvAIqyvnUOfXEeunxeUsTiLGcrq9zcXEsBn2spL+jv+p8Of0NffM9Svt3v5WF485M4knQxQ143bmZ6pkTEyM7icPkM5p+H+B8H/nUeFhH8JL6IL5RFRMumTCBMlrVbyBOIBZlChkD4n5r4D8P+pNm5lona+BHQllgCpSEaQH4eACgqESAJe2Qr0O99C8ZHA/nNi9GZmJ37z4L+fVe4TP7IFiR/jmNHRDK4ElHO7Jr8WgI0IABFQAPqQBvoAxPABLbAEbgAD+ADAkEoiARxYDHgghSQAUQgFxSAtaAYlIKtYCeoBnWgETSDNnAYdIFj4DQ4By6By2AE3AFSMA6egCnwCsxAEISFyBAVUod0IEPIHLKFWJAb5AMFQxFQHJQIJUNCSAIVQOugUqgcqobqoWboW+godBq6AA1Dt6BRaBL6FXoHIzAJpsFasBFsBbNgTzgIjoQXwcnwMjgfLoK3wJVwA3wQ7oRPw5fgEVgKP4GnEYAQETqiizARFsJGQpF4JAkRIauQEqQCaUDakB6kH7mKSJGnyFsUBkVFMVBMlAvKHxWF4qKWoVahNqOqUQdQnag+1FXUKGoK9RFNRmuizdHO6AB0LDoZnYsuRlegm9Ad6LPoEfQ4+hUGg6FjjDGOGH9MHCYVswKzGbMb0445hRnGjGGmsVisOtYc64oNxXKwYmwxtgp7EHsSewU7jn2DI+J0cLY4X1w8TogrxFXgWnAncFdwE7gZvBLeEO+MD8Xz8MvxZfhGfA9+CD+OnyEoE4wJroRIQiphLaGS0EY4S7hLeEEkEvWITsRwooC4hlhJPEQ8TxwlviVRSGYkNimBJCFtIe0nnSLdIr0gk8lGZA9yPFlM3kJuJp8h3ye/UaAqWCoEKPAUVivUKHQqXFF4pohXNFT0VFysmK9YoXhEcUjxqRJeyUiJrcRRWqVUo3RU6YbStDJV2UY5VDlDebNyi/IF5UcULMWI4kPhUYoo+yhnKGNUhKpPZVO51HXURupZ6jgNQzOmBdBSaaW0b2iDtCkVioqdSrRKnkqNynEVKR2hG9ED6On0Mvph+nX6O1UtVU9Vvuom1TbVK6qv1eaoeajx1UrU2tVG1N6pM9R91NPUt6l3qd/TQGmYaYRr5Grs0Tir8XQObY7LHO6ckjmH59zWhDXNNCM0V2ju0xzQnNbS1vLTytKq0jqj9VSbru2hnaq9Q/uE9qQOVcdNR6CzQ+ekzmOGCsOTkc6oZPQxpnQ1df11Jbr1uoO6M3rGelF6hXrtevf0Cfos/ST9Hfq9+lMGOgYhBgUGrQa3DfGGLMMUw12G/YavjYyNYow2GHUZPTJWMw4wzjduNb5rQjZxN1lm0mByzRRjyjJNM91tetkMNrM3SzGrMRsyh80dzAXmu82HLdAWThZCiwaLG0wS05OZw2xljlrSLYMtCy27LJ9ZGVjFW22z6rf6aG1vnW7daH3HhmITaFNo02Pzq62ZLde2xvbaXPJc37mr53bPfW5nbse322N3055qH2K/wb7X/oODo4PIoc1h0tHAMdGx1vEGi8YKY21mnXdCO3k5rXY65vTW2cFZ7HzY+RcXpkuaS4vLo3nG8/jzGueNueq5clzrXaVuDLdEt71uUnddd457g/sDD30PnkeTx4SnqWeq50HPZ17WXiKvDq/XbGf2SvYpb8Tbz7vEe9CH4hPlU+1z31fPN9m31XfKz95vhd8pf7R/kP82/xsBWgHcgOaAqUDHwJWBfUGkoAVB1UEPgs2CRcE9IXBIYMj2kLvzDecL53eFgtCA0O2h98KMw5aFfR+OCQ8Lrwl/GGETURDRv4C6YMmClgWvIr0iyyLvRJlESaJ6oxWjE6Kbo1/HeMeUx0hjrWJXxl6K04gTxHXHY+Oj45vipxf6LNy5cDzBPqE44foi40V5iy4s1licvvj4EsUlnCVHEtGJMYktie85oZwGzvTSgKW1S6e4bO4u7hOeB28Hb5Lvyi/nTyS5JpUnPUp2Td6ePJninlKR8lTAFlQLnqf6p9alvk4LTduf9ik9Jr09A5eRmHFUSBGmCfsytTPzMoezzLOKs6TLnJftXDYlChI1ZUPZi7K7xTTZz9SAxESyXjKa45ZTk/MmNzr3SJ5ynjBvYLnZ8k3LJ/J9879egVrBXdFboFuwtmB0pefK+lXQqqWrelfrry5aPb7Gb82BtYS1aWt/KLQuLC98uS5mXU+RVtGaorH1futbixWKRcU3NrhsqNuI2ijYOLhp7qaqTR9LeCUXS61LK0rfb+ZuvviVzVeVX33akrRlsMyhbM9WzFbh1uvb3LcdKFcuzy8f2x6yvXMHY0fJjpc7l+y8UGFXUbeLsEuyS1oZXNldZVC1tep9dUr1SI1XTXutZu2m2te7ebuv7PHY01anVVda926vYO/Ner/6zgajhop9mH05+x42Rjf2f836urlJo6m06cN+4X7pgYgDfc2Ozc0tmi1lrXCrpHXyYMLBy994f9Pdxmyrb6e3lx4ChySHHn+b+O31w0GHe4+wjrR9Z/hdbQe1o6QT6lzeOdWV0iXtjusePhp4tLfHpafje8vv9x/TPVZzXOV42QnCiaITn07mn5w+lXXq6enk02O9S3rvnIk9c60vvG/wbNDZ8+d8z53p9+w/ed71/LELzheOXmRd7LrkcKlzwH6g4wf7HzoGHQY7hxyHui87Xe4Znjd84or7ldNXva+euxZw7dLI/JHh61HXb95IuCG9ybv56Fb6ree3c27P3FlzF3235J7SvYr7mvcbfjT9sV3qID0+6j068GDBgztj3LEnP2X/9H686CH5YcWEzkTzI9tHxyZ9Jy8/Xvh4/EnWk5mnxT8r/1z7zOTZd794/DIwFTs1/lz0/NOvm1+ov9j/0u5l73TY9P1XGa9mXpe8UX9z4C3rbf+7mHcTM7nvse8rP5h+6PkY9PHup4xPn34D94Tz+6TMXDkAABcCSURBVHja7Z1/sCVFdcc/p+e+t8Ii+0NFEFwQgcUY/ImiGALISlQCAcXEIEpVTGlKTRmiVvxDo6GUGH+VKUlSkiqjxmgEDYKACoqRqMQfkEjAhYBIxAUFcYHFXd67d/rkjzn9br/ZO3dm7rv3vre7fapmZ9/91T3d59vnR59zGlYoqeqM3V+pqler6qz97UiUKNHYAdex+0tUdZsWdLmqrkrAS5RochLupao6b4AL968k4CVKNBnAvVhV51TVq2qegJco0WRVyher6iMlwAXq2v1KVV2lqpKAlyjReACnAwA3CHjJuZIo0RJVyjrAaUnVTBIvUaIJSrihEi8BL1GiyUi4pGomSrSMgBukaiaJlyjREJXy5DEALgEvUaIWgNsxJsCVVc0rEvASJVqsUk4CcGWJd3kCXqIk4SYPuLLES8BLlAA3BcANAt5MAl6ipFJOh+YT8BIlCTc9wCVVM9EeC7hNywi4BLxEK5JkEiqliHRVdRNwGbAX4IHlZPQuMANcAZwB9AAREZ9YYGILr5R4LNw13EVEp9SHJvy+pP6oatYUTzLmh+yISG+FAS5QD+gAlwMvW8nAG8As45pLqWA2P4Y+u2iefdPfjJhV7Xu6nOM+jfZlDwFcWeJ9CXh5knjjAZqI9Aa8NwusBfadh9UCszMFsB4BHga2isiDFaZJPg7mv0d19f6wt/FgBrgdkO0F7hHIHlW87oBMRG4Oz9SGH8LnVfU4YCPgcpjJIMuhE99t0R8P6KKGT1jBgBMb+BUPvEhqCH3GiP+/wEQVf2dANgfZqujvLmQz0d/GBNtF5Hsj9E9EJI9eOxI4Bngu8FQPBwPrgdWuaGuBPMwDDwH3OLgV+B5wLXB9ALBJwJEkn6pmIpLnqv/q4CUe1EHHLx6vcKkr7l8EzhaRX7cBXvhsrnqdg+fVfd7DwzImBlHgTOCiXWSRXnHAC4yiqqcCHwTUw6wD5/sgcS0uAcTVLKwevpGJvDC030DtdeFzqnoY8PvA6R6e6Wwl3+l7xaW28smQDt2cw8UZfFxE7hpF8pT48kcmfeqA4A143wZOE5FfNWk3qKOqOuNhs4ODfbWwyR1kHq7qjMH2UGAd8CLg00AeNTpNSeeGSLgceAJwovV3xoB3KvCFALxRJ3jMqv4xwBGMaRC1fy9LjK6DjoMfNDE1IlDmqvoM4C0eXu4KrQZXMG9uTUp0BaBJxOS6GI8okDl4alZIyT9T1QuA95nkqV0QBthlj/FwgCsWLx32fFIsbF0HL/Bwlaqe3BB4gf/3Bw4yzUFlQFtqmpZJ9j3G/nhVaQsh3kC/bLk30E2dIlf9nKrmuep8XtzD5Ue5vBWbKV95fxxeG9lSlfY6wAOq63PVj0bjprlqN/Svqq2ml/1OPD83zaseU9e/QeOoqkdb/3yL9rv2nf9U1X2MH6RBW79t38urfrvX3zL7o86YmUZWGtZMLetRbBWUaSVJvNDe4UG4yWQ1hfDb/1sSilUOspM8XOjgUBNNOeCkQqUcUdQ7CqmjCnlWSL5/76qeJSKXhL401BgOD2odDfsohd3XdYW2cTFwCiCqWmVbhraOiObQVQy204IRd29Jp6rOrvWqutVWGj8kZOwyVe1MW+KF1VRV1+Sqv2y7Qo8gUby1sUNVD4psoIESrqf6Ju1/pzupfg3oZy9IwK7qS2LpUieVc9XzRu1v3ueHjw2TslFbHxrWVjTeW1X1gE5bJl6B0mwYdURkTlXfaO7rnJInbYjEy6co8YJt8EQH680AmeQ4qzlZtlwPvxgk6YJU6am+M4PzzEGgbSSbLrbZwnOKNN9EzrRwcoiDz+5QfTZwR828hLaOXMJkBH54XU/1JhH5aIWUDW1trLGLg025Bbi3LeB2RWn3W6q63cLQfMMg6S9OU+KF1burerpGK/wwSVWy98LVa3g9ooUt9tVBcxuF8Z0b2W2+qRQNdl7VIIe+jmBrXVPHi0FryFVvqLOzGjxHL1ftqerzq6SsqrpcdfOwtuw3NFe9jKa6buTOPgI40HTXlSrxgtcsA44F3kbhYdMGfQ4r3O8Bn7dtkGlIvODlO3KYfRXZB7LE8c/sd+6M7DsfzXVPVV8KfNjs4ayJdFJziwe+8vCggy0ettrvrwEOcsX+XRGCUuyTSQNbq+fgxK7qy0XkC4M8mpELf42HDU28skPaFC0krAM+rarPBB6O2ghe0sea57JO0hE8l50GgIsjTS4B9tkVBV6LwV8u4JE1VIl8EdXxU2PkPFzO7rbv1LP/56XP9MxZAMWG8AJThD1XVd3fwyfN3e6kfq9PTQXMgPuAzwGXOfghcF8WOSFU9THAs4FzBM7KQDz4Bk4joWjn7ap6ScXCFNT0DeNQ020roefgUA8fzUTOMS2gZwtVDhzsYB9fsVVQolvauF9PVNWHTVrOmdu97ZUvw9VtoFIuu6oZqUTfGaZeRmrKF8xB1BlzP8K2xUVNnRCRGpnnqh9Q1ccPer4KR82JqvrTpmpglKny3EHqXhiPruoZTdR037DdoN52VU8P7UYq+Fl1YxWN0XEwZHWxlT1ESFwDrLaVZNYkZNvLLcPVWYIaVpZ4mUkBN27AmbqyN0XoVBM15UdlqRv2lKLLla5swOUGmBAnOHiFh7zOaWJODufh58CmTORtIvILW6Sy0BcRWQiqttcy06C+AbzQw70W1uRrJGp4/4xh49TpOza0TnSaK79Og3EetAMXqOpa+13XxGGjFmZmoW93VqqXkZqxEXgncFPk+dN2Ehq1djaysmIxV4qqGcboQODxDe2QW8ubtgP2kdrGLKox9nmu2YcD4LY4OElEbrVKAb1he2nWzxBGNisit3dVX+8K08U3GCuA46M9uEH0lAZAEA93AZc6eJMtMlmVmqmFSnmgh/MzkTeoLgzvkQ3GVYB7KBan2lV41YhpJuX9p41qqtES1L3lpImpmpHn8nfq1Kyw3zOv+rwme1Zt+6CqxzZR9awfvVx1+5zqs+y7M0tUab9VpxJG+133m8RZlAYVqenX1ajpQd27wb73WS0YtFfnzTQV9+jIc3lDQ8/lgud1KOOIyNwSUyzC7z/VpGS+i+3zDZJ4F9tzjUvVDJ7LjX0taujqvKMHW8ymcLYINL1cjfr2umF9WPxRMgdvWSVyQ0hcHvX5VVUUPlknoc2jiIN18/DEePxaqune/rnDgPpaDzdmRUCyr2o7UjX/1v6/poVJECJR3KTVPWcPddSIKs9KA14POH0CwENqVKJo8n6yt8hdItITka7dm16+wqbMVXUNRdjTwpbCsG0BD98VkX8w26y7hEf3IqIZfMu8mLV2JCCzsF+J2cP9IGA/baam32z25vYu/AHwcFaEoGnFHGW+eP5jVfV3gb1beEk3RzbnRMnb6nMUuwd1TOKdYcB7BeCXaOOF7x3RxJ7zhU15eg6rDPhZKVFyp+TJHFxWfP4qEflOqb8OyHtwXKfYc6q0beL+OXjXmBZSBbgftqyDXwrsV+N+V4rVb98Ke+9QVzxzSNcZ9APhGTbbwvMoEbmlp/qnGfwT/SoDlTa4h3c7eF9YCIZseYTXg6TTiYIu2rw8zB7E230aJAxnnqWqmksGnkkZb/lYTxoGOjPmcYXWcEm28x7fTv/Pdn7vduA7RJvhEYg2GTOp1DtPbnZwdZCS4xjUxxTZ5A9QSLDafdVOHxRlSbfR/qgMPg4A6RbjYSa1dkTkE7nqKQ7OrHKshHkQeLaHvxGqA9O1nyDbA+6YOOiibPKDgKeze1FQNZcKvDgf6wkNJZ2WbK5aSeP6n/nvATZbAM0x1Ee6eLNJPmdz21nqIir9Bdrnqr6Frt6reP6mnsuHZuD/oucKzrE3ejjeFfl4QzftQ8ZFnefStkS2TEPSxf15/xTtuRApsNFAMamyEeNQNQPPPcnBqiaRGdJSgmt/4n8VT3zJ+bDG91NhhrWfmYS4elw2ehBpqjrrLSG24Zhtq3CObHT1jg2h2C643wCvZp93ROReVT2XfkL20AWwxpYL43OniGwP4z0x0AWvp4j8DPiLaYsiVX3rhEE3TNVsWlWqcT7WGPj6pyKytdS3xmFTkYS4bwZubujlbENrsJjMYdI2xGnOG2AMLEFNn61T011/jH9s31mI4bRwx0xE/kVVX+Pg5Jr9O2kw9rh+zmIG9DpTYP5J2VbDJJ0Cr26wco9b1bwIOLMUENvEk/KUCXYyqIS3lTSBmDE3ULjjhzlRvM3jHSKybYzl6kJ/Njh49DDpofaeh+2z/Y1mjRaPA+yqBF20qt1S8Tk1nn2zqeMz2iyuspLyUszlxCNEzCXbm8YVjGLgOcDTmF5FsmDbvAy4QlX3MRuh6UpYl481DuQNYjIxpnhCA3UxvHfXmHlHVFXyIgiaGpUu9OFuisDqQWr6rKnpUjPwmyv41VOU5LvFwwVusdNpJJM164+9AnRWaJmFUR8wNynz3nHZHCPQ2iaSPdofcx6e7BqATvuFf9qIkZ7dNw8x1Na1+MmtY14g1OZsUws/wS2RKphHi1sTNT2zf4aVqfDmVHmvLzSmx2mzTIgyQ4awydsXgW5cLt+VQqr6fuAEqrPEJ0FhX+frwCmWrd5U/Xoc9flYAUCjPE8wIW6vYrIc9sqagzgf41yFhWedh00uAkWNZvDdivFq6rncHuUS6iBpZ06VrT3V8zP4iG8p7aK27nd97WBB0r2MIoOgZw8sJfVhUTk1dq4MV/X6oO9Lze/LkM8Pe9+ZbXUchevbLwPgrqGomTjX0IPZOB8rmsAvAT8zxu9adMRC3pxCL7O/8+Izvay4z1HUgKxyfrRhqH3HOHahaNQrXCFtezURKWF/7doSYILn8siGnsstVJSpiNcik3YXenizg0N8O2kXO7Aeihfh8ICf2o2E3TQrS8eAO9Xcwk23DAJjHBbZMp0hzoPcwetF5J6l2tgDOH9bi/5uaGB7NXWwhUKtfx4lzFZx8EJWw339Wp0+8lxmHg6lHnSYM2hotoipvJmI7Oipng/8Y8vFqdKB1RGRf1PVY4EvU2SFz49RX+9MGXDT9JQuBXCtPJfmmruXolxAJ/LWtXKiVam7OdzbYNCc9fc3tqquFZEHlujBzKzw0Zsy2Ojrw88CE195YDHWZXtuP1ekRzUB3S3RMw2bryDt/hl4u2WQt7LtBjmwOqa7XqeqpwFXmqqZqLkNd6qI7BgBcE2rVgVV+c4xu+oX+pDBT6ixpyJpu34fOF6LIjtBPWwr5UIdlsM9vMc3007C+5+sUtOB1U3KJugQp1KFtJvrqX44g79rIe3E2tqpREOof9IRkWtV9WSK9JWqQfANGUkpTkt5A0WmeZsaJXsC4OKxPKzEVFVj+uOSHTQuVZxtcNtqeMjBvk2Y1sGbReTSKJGzDeACzz3aw+fNnh3q4rfMBufh+w5CwHZ5r7FJcVlnA3hrjT1XlnYCfMrDOxzs31DahbZuA7h4UFsTKEPwxIZl73YlCiW/v6aqe406bqXisvcNKy4blZ/74ITqojjjrGvVEjUb1kQ5274/2yTR2foezqBfm6t+s0Udk5AAfUYAbgxiu5/fsODrnKoe3GbuoqKy725SOyZq60FVfWw854tsLjNG3RicEGGj+IRI9GdJwg0y09jPNd8jWxsyEkzCaIWjo1a6lfrsAK/FKbXHNVj9xdTBj6nq3SJyTcSYWvp+8C6rSSY/r/oc4OMOfrOBHRfn713n4Is25r2yJhB5Lod6E12xsX5PC0m34LAxZ8pbBVZrffqRuJ3jOydD0crz1wMO7NijJVxs0wDMqz6/roS6rZo+V/25qj5pAvPl7H5IrvpI3cEj8UquRdHat1i2dl07h1r58bkWEs5HleSOjseurDnkqje2LZswypzlqp9uUP0rtHXpoD5PwrsYEH1UyxV4T5Bwi2imX0O00uY1B4a6omjRdar6GeDGHvyqA92eJa52+mfYhWKv5WRWoUhk/aaIXB+eIQr6vVNVLwJe7YcnccZ9WkVxlt6fWC3Kb1OkyzxsbT0+h6METvJwkivsfMwmyhqO/Qxwnoj8oFxgNnIqraNUvqGKL+OyCbTd8C6k3YXAq2o0wrKXVCYGuijCIAOeTD9xddrhWOPaOpgY4GqcJ8OAd248ccMmMBvskjwbuL7EdCHI9698sVE9U+dQCX2i2D87jKKS9tsMVKHS86K2ff+kH9dg5e66AnBfBd4dTmatUNM3uCL8TtuUTWjNVIU3s9dUmFSF3nUmwOxKkV5xJLs2TRpwmERoNIERk+cNvqMVTKAMSGSNpN2Pe6rvMOkVTqsd2if6xXw8xeEgmSsO/gj1TEIJftdQui0AzsMPH4JXru3bojpg0fI5HJ7VS9CdyiaMwNvkxfFddV7S0IeB8Z2T2rz2wEeWaatAKfKyzlnBgAuT8DNg3iLja1dpe78zQmNxHOCWCqYLwPtQrvo8K1nQlRrgWb8WOeDCs5Rfb9JPijLmM8B/7YCXris24evGfugZEHHZhLmobMKIUmVjw7He8Ug/M31XLsjVWM3dZIZ+b7mdJsNUcat0/D/a8hSbUU44NcP+hrL7ekCfnNU7/UrbE3uWehZd5Gq/Iqpr6Ro4Nz5Ts10Qnn9LNKfScr5CW19qUlMzV70tcipKa5tiRIbqLMO1yibp9SOuMNNQKRdUEHMKfILFiaWT0jxgcRzgQJvF3PtzwGnAp+xcclHo6ZhXbLUTVy2uMrPg7XdlIqdIMwnn7WEOa+JEoYjq2TFKVE+I1XQN4ztdEd8ZTvWdvHppjfSmLN2CY2B/4MX0jz5uC7iQLTBJwNmiqQ74ew9nOXiWL+yobILHHm+uswejrPd54BxV/baH97qiPB/m2Qw2mowCNKIDJiMb7KouvGNW5PtBMgwb+6i+yz45bMjsN6NzCbQ0t7E91yqqJ/aSetjfFgetOAOhZ21Xxnd2xsTwKyER1onIvKr+JYUrvs2mfCzhThs1eHkET5gYuE/1cJGDFwRu0T5TSFNnyxBniqeQKG1iDotTU0UuVNUrPLwVeI3r1zEhcqBU9VNLd2e2VZiXnoerHVwgIlcGXmqY4xmcdodkdgaEq0lcjSL+R/Ey5xRFj9bXqIjl/MXJeC9XSiKsqr7aVMtRAPe1KUk4Sl5DJyJ3q+oJ1vc/FniGjFcLCe7728qeyxptJQT8bgHOVdUPUJSkOB042hXFhNpK5W0ebnRFVsulmchNkd3Tpo5mAPdjgdvsVJzgVSxfXfPc/seIZkf4/APAe/JCI/EZ9HLIS/eeSd2vRv0Z2PGRbTcb9D8EHm1u5ozJemsGnQKbAc8HXsPi861XLOAq1Jcwpk8HnksRYHCILwqw7kux4RxWbR9JmvLBj7nvv96zCljbgLNHSckJ81zamD7A+vc04HBfpNWspyij5+zwyR0O7vdwt0mZmyhKmW8pmQUjF60NjpZpz9mSFtsx2FFqq9/ndzEn54oA3DDGHvCZTiTBg23kzfmhU+pjxs7xm8vyOzW/P4jPlzROLSvbVeYvyhgeMFRyPg64nCLUZ5rZ26Ooy9P0Uo4ysRKNnzJ4Y7gp00mszo57kYgZOu5n9BxS+oyOe5zHnGO4siVdvAKbe/TEFQC8XRZwLVfvQTZYoj2Joo3AF6rqr3XxGdG7ZbZAokQrCXgnrkDgJcAlShIvAS5RovED7yRV3b7MwEuAS5SAlwCXKNHuCbwEuEQJeFMEXgJcogS8KQIvAO7qBLhECXiTB14CXKJEFcDbNAHgJcAlSjRF4CXAJUrUAng7lgi8BLhEiVoC70VLAF4CXKJEUwReAlyiRCMCb2YE4KV9uESJpijxEuASJZoi8BLgEiWakKp58gDgJcAlSjRhiXeynX+mqjpv968nwCVKNHlV80ED3JcT4BIlmo6qeaaplI9KgEu0O9D/A4cBhhXC4gk+AAAAAElFTkSuQmCC" alt="EON" style="height:40px;flex-shrink:0">
+    <div class="title-group">
+      <h1>Malaysia Car Registrations — Market Overview</h1>
+      <div class="subtitle" id="dash-subtitle">Loading…</div>
+      <div class="subtitle" id="refresh-stamp" style="opacity:0.7;font-size:11px;margin-top:4px"></div>
+    </div>
+    </div>
+    <div class="filters">
+      <div class="filter-group">
+        <label>Years</label>
+        <div class="multi-select">
+          <button type="button" class="ms-button" id="ms-year-btn">All years</button>
+          <div class="ms-dropdown" id="ms-year-dropdown" hidden>
+            <div class="ms-actions">
+              <button type="button" id="ms-year-all">Select all</button>
+              <button type="button" id="ms-year-none">Clear</button>
+            </div>
+            <div class="ms-actions ms-groups" id="ms-year-presets">
+              <button type="button" data-preset="last5">Last 5</button>
+              <button type="button" data-preset="last10">Last 10</button>
+              <button type="button" data-preset="ytd">This year</button>
+            </div>
+            <div class="ms-options" id="ms-year-options"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Months</label>
+        <div class="multi-select">
+          <button type="button" class="ms-button" id="ms-month-btn" style="min-width:130px">All months</button>
+          <div class="ms-dropdown" id="ms-month-dropdown" hidden>
+            <div class="ms-actions">
+              <button type="button" id="ms-month-all">Select all</button>
+              <button type="button" id="ms-month-none">Clear</button>
+            </div>
+            <div class="ms-options" id="ms-month-options"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Makers</label>
+        <div class="multi-select">
+          <button type="button" class="ms-button" id="ms-btn">All makers</button>
+          <div class="ms-dropdown" id="ms-dropdown" hidden>
+            <input type="text" class="ms-search" id="ms-search" placeholder="Search makers…">
+            <div class="ms-actions">
+              <button type="button" id="ms-all">Select all</button>
+              <button type="button" id="ms-none">Clear</button>
+            </div>
+            <div class="ms-actions ms-groups" id="ms-groups"></div>
+            <div class="ms-options" id="ms-options"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label for="filter-fuel">Fuel</label>
+        <select id="filter-fuel"></select>
+      </div>
+      <div class="filter-group">
+        <label>&nbsp;</label>
+        <button class="btn-reset" id="btn-reset">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total registrations</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg monthly registrations</div>
+      <div class="kpi-value" id="kpi-avg">—</div>
+      <div class="kpi-sub" id="kpi-avg-sub">&nbsp;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top maker</div>
+      <div class="kpi-value" id="kpi-maker">—</div>
+      <div class="kpi-sub" id="kpi-maker-sub">&nbsp;</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Top fuel type</div>
+      <div class="kpi-value" id="kpi-fuel">—</div>
+      <div class="kpi-sub" id="kpi-fuel-sub">&nbsp;</div>
+    </div>
+  </section>
+  </div><!-- /.sticky-top -->
+
+  <div class="collapse-controls">
+    <button type="button" id="btn-expand-all">Expand all</button>
+    <button type="button" id="btn-collapse-all">Collapse all</button>
+  </div>
+
+  <section class="collapsible-section" data-section-key="whole-market">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Whole vehicle market</div>
+      <div class="insights-meta" id="whole-market-meta">Cars + motorcycles + light commercial + heavy commercial</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="kpi-row whole-market-kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Vehicles all categories</div>
+          <div class="kpi-value" id="kpi-whole-total">—</div>
+          <div class="kpi-sub" id="kpi-whole-total-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Motorcycles share</div>
+          <div class="kpi-value" id="kpi-whole-moto">—</div>
+          <div class="kpi-sub" id="kpi-whole-moto-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Cars share</div>
+          <div class="kpi-value" id="kpi-whole-car">—</div>
+          <div class="kpi-sub" id="kpi-whole-car-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Commercial share</div>
+          <div class="kpi-value" id="kpi-whole-comm">—</div>
+          <div class="kpi-sub" id="kpi-whole-comm-sub">&nbsp;</div>
+        </div>
+      </section>
+
+      <section class="chart-row row-a">
+        <div class="chart-container">
+          <h3>Monthly registrations by category</h3>
+          <div class="chart-sub" id="whole-monthly-sub">Stacked bars · each month covered by the whole-market dataset</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-whole-monthly"></canvas></div>
+        </div>
+        <div class="chart-container">
+          <h3>Category mix</h3>
+          <div class="chart-sub">Share of registrations by vehicle category</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-whole-mix"></canvas></div>
+        </div>
+      </section>
+
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <h3>Registrations by category</h3>
+          <div class="chart-sub">Volume and EV/electrified share for each vehicle class</div>
+          <div id="table-whole-cat"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="brand-origin">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Brand origin</div>
+      <div class="insights-meta" id="origin-meta">Where the brands come from · Europe · Japan · China · Korea · ASEAN · US</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="kpi-row whole-market-kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">China brand share</div>
+          <div class="kpi-value" id="kpi-origin-cn">—</div>
+          <div class="kpi-sub" id="kpi-origin-cn-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Japan brand share</div>
+          <div class="kpi-value" id="kpi-origin-jp">—</div>
+          <div class="kpi-sub" id="kpi-origin-jp-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Europe brand share</div>
+          <div class="kpi-value" id="kpi-origin-eu">—</div>
+          <div class="kpi-sub" id="kpi-origin-eu-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">ASEAN brand share</div>
+          <div class="kpi-value" id="kpi-origin-asean">—</div>
+          <div class="kpi-sub" id="kpi-origin-asean-sub">&nbsp;</div>
+        </div>
+      </section>
+
+      <section class="chart-row row-a">
+        <div class="chart-container">
+          <h3>Monthly registrations by brand origin</h3>
+          <div class="chart-sub" id="origin-monthly-sub">Stacked monthly bars · respects all current filters except maker</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-origin-monthly"></canvas></div>
+        </div>
+        <div class="chart-container">
+          <h3>Origin mix</h3>
+          <div class="chart-sub">Share of registrations by brand origin</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-origin-mix"></canvas></div>
+        </div>
+      </section>
+
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <h3>Registrations by brand origin</h3>
+          <div class="chart-sub">Brands grouped by origin with their volume share</div>
+          <div id="table-origin" class="models-scroll"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="insights-focus">
+    <div class="collapsible-header insights-header">
+      <div class="section-title"><span class="chevron">▾</span>Insights — brands in focus</div>
+      <div class="insights-meta" id="insights-meta"></div>
+    </div>
+    <div class="collapsible-body">
+      <section class="insights-grid" id="insights-grid"></section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="insights-nonfocus">
+    <div class="collapsible-header insights-header">
+      <div class="section-title"><span class="chevron">▾</span>Top non-focus brands</div>
+      <div class="insights-meta" id="insights-meta-nf"></div>
+    </div>
+    <div class="collapsible-body">
+      <section class="insights-grid insights-grid-secondary" id="insights-grid-nf"></section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="trend-volume">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Trend & volume</div>
+    </div>
+    <div class="collapsible-body">
+  <section class="chart-row row-a">
+    <div class="chart-container">
+      <div class="chart-header-row">
+        <div class="chart-titles">
+          <h3>Monthly registrations</h3>
+          <div class="chart-sub" id="monthly-sub">New vehicle registrations by month</div>
+        </div>
+        <div class="toggle-group" id="monthly-mode">
+          <button type="button" data-mode="continuous" class="active">Continuous</button>
+          <button type="button" data-mode="yoy">Year-over-year</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="chart-monthly"></canvas></div>
+    </div>
+    <div class="chart-container">
+      <h3>Fuel mix</h3>
+      <div class="chart-sub">Share of registrations by fuel (ignores fuel filter)</div>
+      <div class="chart-canvas-wrap"><canvas id="chart-fuel"></canvas></div>
+    </div>
+  </section>
+
+  <section class="chart-row row-full">
+    <div class="chart-container">
+      <div class="chart-header-row">
+        <div class="chart-titles">
+          <h3>Fuel mix over time</h3>
+          <div class="chart-sub" id="fuel-stack-sub">Share of registrations by fuel (% of period total) with total volume overlay · ignores fuel filter</div>
+        </div>
+        <div class="toggle-group" id="fuel-stack-mode">
+          <button type="button" data-mode="annual" class="active">Annual</button>
+          <button type="button" data-mode="monthly">Monthly</button>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="chart-fuel-stack"></canvas></div>
+    </div>
+  </section>
+
+  <section class="chart-row row-c">
+    <div class="chart-container">
+      <h3>Top 15 makers</h3>
+      <div class="chart-sub">By total registrations (ignores maker filter)</div>
+      <div class="chart-canvas-wrap"><canvas id="chart-makers"></canvas></div>
+    </div>
+    <div class="table-section">
+      <div class="chart-header-row">
+        <div class="chart-titles">
+          <h3 id="models-title">Top models</h3>
+          <div class="chart-sub" id="models-sub">Top 15 models by registrations</div>
+        </div>
+        <div class="toggle-group" id="models-mode">
+          <button type="button" data-mode="total" class="active">Total</button>
+          <button type="button" data-mode="annual">Annual</button>
+          <button type="button" data-mode="monthly">Monthly</button>
+        </div>
+      </div>
+      <div id="table-models" class="models-scroll"></div>
+    </div>
+  </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="long-trends">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Long-term trends</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-full">
+        <div class="chart-container">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>Brand share over time</h3>
+              <div class="chart-sub" id="brand-share-sub">Top 8 brands per period, rest grouped as Others · ignores maker filter · reflects year & fuel filters</div>
+            </div>
+            <div class="toggle-group" id="brand-share-mode">
+              <button type="button" data-mode="share" class="active">Share %</button>
+              <button type="button" data-mode="units">Units</button>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-brand-share"></canvas></div>
+        </div>
+      </section>
+      <section class="chart-row row-a">
+        <div class="chart-container">
+          <h3>Colour share over time</h3>
+          <div class="chart-sub">Top 8 colours as % of each year · reflects maker & fuel filters</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-colour-trend"></canvas></div>
+        </div>
+        <div class="chart-container">
+          <h3>Body type share over time</h3>
+          <div class="chart-sub">Share of each year's registrations · reflects maker & fuel filters</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-type-trend"></canvas></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="model-leaderboard">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Model leaderboard by year</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>Top models</h3>
+              <div class="chart-sub" id="leader-sub">Top 15 models · reflects maker & fuel filters</div>
+            </div>
+            <select id="leader-year" class="card-select"></select>
+          </div>
+          <div id="table-leader"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="ev-adoption">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>EV adoption</div>
+      <div class="insights-meta">Market-wide · ignores maker & fuel filters · reflects year filter</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-a">
+        <div class="chart-container">
+          <h3>Non-petrol share of new registrations</h3>
+          <div class="chart-sub">Electric, hybrid and diesel as % of each year's registrations</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-ev-share"></canvas></div>
+        </div>
+        <div class="chart-container">
+          <h3>EV registrations by brand</h3>
+          <div class="chart-sub">Top 8 EV brands per year, rest as Others</div>
+          <div class="chart-canvas-wrap"><canvas id="chart-ev-brand"></canvas></div>
+        </div>
+      </section>
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>EV leaderboard</h3>
+              <div class="chart-sub" id="ev-leader-sub">Electric registrations only</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+              <div class="toggle-group" id="ev-leader-mode">
+                <button type="button" data-mode="brands" class="active">Brands</button>
+                <button type="button" data-mode="models">Models</button>
+              </div>
+              <select id="ev-year" class="card-select"></select>
+            </div>
+          </div>
+          <div id="table-ev-leader"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="model-compare">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Compare models</div>
+      <div class="insights-meta" id="compare-meta">Search any model ever registered · up to 5 at once</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-full">
+        <div class="chart-container">
+          <h3>Head-to-head</h3>
+          <div class="chart-sub">Annual registrations, all fuels · reflects year filter</div>
+          <div class="compare-controls">
+            <div class="compare-search-wrap">
+              <input type="text" id="compare-search" class="compare-search" placeholder="Search models… e.g. Myvi, Model Y, e.MAS 7">
+              <div class="compare-suggest" id="compare-suggest" hidden></div>
+            </div>
+            <div class="compare-chips" id="compare-chips"></div>
+          </div>
+          <div class="empty-state" id="compare-empty" style="min-height:120px">Search and add models above to compare them</div>
+          <div class="chart-canvas-wrap" id="compare-canvas-wrap" style="display:none"><canvas id="chart-compare"></canvas></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="brand-compare">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Compare brands</div>
+      <div class="insights-meta">Click any maker name in a table to add it here · up to 4 at once</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-full">
+        <div class="chart-container">
+          <h3>Brand head-to-head</h3>
+          <div class="chart-sub" id="brand-cmp-sub">Registrations over time · reflects year & fuel filters · ignores maker filter</div>
+          <div class="compare-controls">
+            <div class="compare-search-wrap">
+              <input type="text" id="brand-cmp-search" class="compare-search" placeholder="Search brands… e.g. Proton, BYD, Toyota">
+              <div class="compare-suggest" id="brand-cmp-suggest" hidden></div>
+            </div>
+            <div class="compare-chips" id="brand-cmp-chips"></div>
+          </div>
+          <div class="empty-state" id="brand-cmp-empty" style="min-height:120px">Add brands here, or click a maker name in any table below</div>
+          <div class="chart-canvas-wrap" id="brand-cmp-wrap" style="display:none"><canvas id="chart-brand-cmp"></canvas></div>
+        </div>
+      </section>
+      <section class="chart-row row-full" id="brand-cmp-stats-row" style="display:none">
+        <div class="table-section">
+          <h3>Side by side</h3>
+          <div class="chart-sub">Within the selected years · EV / hybrid shares ignore the fuel filter</div>
+          <div id="table-brand-cmp"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="breakdown">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Breakdown by dimension</div>
+    </div>
+    <div class="collapsible-body">
+  <section class="chart-row row-b">
+    <div class="chart-container">
+      <h3>Registrations by state</h3>
+      <div class="chart-sub">Top 10 states — reflects all active filters</div>
+      <div class="chart-canvas-wrap"><canvas id="chart-state"></canvas></div>
+    </div>
+    <div class="chart-container">
+      <h3>Vehicle type</h3>
+      <div class="chart-sub">Share by vehicle type — reflects all active filters</div>
+      <div class="chart-canvas-wrap"><canvas id="chart-type"></canvas></div>
+    </div>
+    <div class="chart-container">
+      <h3>Top colours</h3>
+      <div class="chart-sub">Top 8 colours — reflects all active filters</div>
+      <div class="chart-canvas-wrap"><canvas id="chart-colour"></canvas></div>
+    </div>
+  </section>
+    </div>
+  </section>
+
+  <footer class="dashboard-footer">
+    EON Strategic Planning &amp; Business Development · Source: JPJ / Malaysia open car registration data · 2000-2026
+  </footer>
+</div>
+
+<script>
+let DATA = null;
+async function __loadData() {
+  try {
+    const res = await fetch('data.json.gz', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    let text;
+    if (typeof DecompressionStream !== 'undefined') {
+      const ds = new DecompressionStream('gzip');
+      text = await new Response(res.body.pipeThrough(ds)).text();
+    } else {
+      throw new Error('Browser lacks DecompressionStream');
+    }
+    DATA = JSON.parse(text);
+    new Dashboard(DATA);
+  } catch (e) {
+    const el = document.getElementById('dash-subtitle');
+    if (el) el.textContent = 'Failed to load data: ' + e.message;
+  }
+}
+
+
+const COLORS = ['#1B3F91','#E32119','#10b981','#f97316','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#84cc16','#14b8a6','#a855f7','#eab308']; // EON navy + red lead
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const FUEL_DISPLAY = {
+  petrol: 'Petrol',
+  electric: 'Electric',
+  diesel: 'Diesel',
+  hybrid_petrol: 'Hybrid (petrol)',
+  greendiesel: 'Green diesel',
+  other: 'Other'
+};
+
+// Draws the value at the end of each bar (horizontal bar charts)
+const COLOUR_HEX = {
+  white: '#d4d4d8', grey: '#9ca3af', red: '#ef4444', silver: '#cbd5e1',
+  black: '#1f2937', blue: '#3b82f6', brown: '#92400e', maroon: '#7f1d1d',
+  orange: '#f97316', green: '#10b981', yellow: '#eab308', purple: '#8b5cf6',
+  pink: '#ec4899', gold: '#d97706', beige: '#b8a87f'
+};
+
+const BAR_VALUE_PLUGIN = {
+  id: 'barValues',
+  afterDatasetsDraw(chart, args, opts) {
+    if (!opts || !opts.enabled) return;
+    const { ctx } = chart;
+    const meta = chart.getDatasetMeta(0);
+    const ds = chart.data.datasets[0];
+    if (!meta || !ds) return;
+    ctx.save();
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillStyle = '#6b7280';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    meta.data.forEach((bar, i) => {
+      const v = ds.data[i];
+      if (v == null) return;
+      ctx.fillText(fmt(v), bar.x + 6, bar.y);
+    });
+    ctx.restore();
+  }
+};
+
+const TYPE_DISPLAY = {
+  motokar: 'Passenger car',
+  jip: 'SUV / Jeep',
+  motokar_pelbagai_utiliti: 'MPV',
+  pick_up: 'Pick-up',
+  window_van: 'Van'
+};
+
+function fmt(n) {
+  if (n == null) return '—';
+  if (Math.abs(n) >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (Math.abs(n) >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (Math.abs(n) >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return Math.round(n).toLocaleString();
+}
+function fmtFull(n) {
+  if (n == null) return '—';
+  return Math.round(n).toLocaleString();
+}
+function pct(part, total) {
+  if (!total) return '0.0%';
+  return ((part / total) * 100).toFixed(1) + '%';
+}
+
+class Dashboard {
+  constructor(data) {
+    this.data = data;
+    this.charts = {};
+    this.monthlyMode = 'continuous'; // 'continuous' | 'yoy'
+    this.init();
+  }
+
+  init() {
+    this.setupFilters();
+    this.setupMonthlyToggle();
+    this.setupFuelStackToggle();
+    this.setupModelsToggle();
+    this.setupBrandShareToggle();
+    this.setupLeaderboard();
+    this.setupEVLeader();
+    this.setupCompare();
+    this.setupBrandCompare();
+    this.renderInsights();
+    // Stamp the last-refresh timestamp so cache issues are obvious
+    const stamp = document.getElementById('refresh-stamp');
+    if (stamp) {
+      const focus = (this.data.insights && this.data.insights.items) ? this.data.insights.items.length : 0;
+      stamp.textContent = `Data refreshed ${this.data.generated_at || ''} · ${focus} focus brand cards`;
+    }
+    const subtitle = document.getElementById('dash-subtitle');
+    if (subtitle) {
+      const years = [...this.data.years].sort((a, b) => a - b);
+      const grandTotal = years.reduce((s, y) => s + (this.data.total_by_year[String(y)] || 0), 0);
+      const makerCount = (this._makerTotals ? Object.keys(this._makerTotals).length : 0);
+      subtitle.textContent =
+        `${years[0]}–${years[years.length - 1]} · ` +
+        `${(grandTotal / 1e6).toFixed(2)}M registrations across ${makerCount} makers`;
+    }
+    this.render();
+    this.setupCollapsibles();
+    this.setupPanelHiding();
+    this.setupStickyShadow();
+  }
+
+  setupPanelHiding() {
+    const KEY = 'msia_dash_hidden_panels_v1';
+    let hidden = new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || '[]');
+      if (Array.isArray(saved)) hidden = new Set(saved);
+    } catch (e) {}
+    const persist = () => {
+      try { localStorage.setItem(KEY, JSON.stringify([...hidden])); } catch (e) {}
+    };
+
+    // One hideaway box per section. Each box lists that section's panels
+    // with checkboxes; unchecking hides the panel. Panels are keyed by the
+    // id of their inner canvas/div so keys stay stable even when card
+    // titles change (e.g. "Top models" -> "Proton model lineup").
+    const groups = [];
+    document.querySelectorAll('.collapsible-section').forEach(section => {
+      if (section.style.display === 'none') return; // e.g. whole-market with no data
+      const titleEl = section.querySelector('.section-title');
+      const title = titleEl ? titleEl.textContent.replace('▾', '').trim() : section.dataset.sectionKey;
+      let items = [...section.querySelectorAll('.chart-container, .table-section')]
+        .map(card => { const inner = card.querySelector('[id]'); return inner ? { key: inner.id, card } : null; })
+        .filter(Boolean);
+      if (!items.length) {
+        // Sections without chart/table cards (the insights grids) get a
+        // single checkbox for the whole card grid.
+        const body = section.querySelector('.collapsible-body [id]');
+        if (body) items = [{ key: body.id, card: body, label: 'All cards' }];
+      }
+      if (items.length) groups.push({ section, title, items });
+    });
+
+    const labelFor = (it) => {
+      if (it.label) return it.label;
+      const h3 = it.card.querySelector('h3');
+      return h3 ? h3.textContent.trim() : it.key;
+    };
+
+    // Re-balance chart rows: hidden cards collapse, survivors share the row,
+    // fully-hidden rows disappear.
+    const updateRows = () => {
+      document.querySelectorAll('.collapsible-section .chart-row').forEach(row => {
+        const cards = [...row.children].filter(el =>
+          el.classList.contains('chart-container') || el.classList.contains('table-section'));
+        if (!cards.length) return;
+        const visible = cards.filter(el => el.style.display !== 'none');
+        if (!visible.length) { row.style.display = 'none'; return; }
+        row.style.display = '';
+        row.style.gridTemplateColumns = visible.length < cards.length
+          ? `repeat(${visible.length}, 1fr)` : '';
+      });
+    };
+
+    const apply = () => {
+      groups.forEach(g => g.items.forEach(it => {
+        it.card.style.display = hidden.has(it.key) ? 'none' : '';
+      }));
+      updateRows();
+      requestAnimationFrame(() => {
+        Object.values(this.charts || {}).forEach(c => { if (c && c.resize) c.resize(); });
+      });
+    };
+
+    // Build the rail of hideaway boxes
+    const rail = document.createElement('div');
+    rail.id = 'panel-rail';
+    groups.forEach(g => {
+      const wrap = document.createElement('div');
+      wrap.className = 'rail-group';
+      const tab = document.createElement('div');
+      tab.className = 'rail-tab';
+      tab.textContent = g.title;
+      tab.title = `Show / hide panels in \u201c${g.title}\u201d`;
+      const fly = document.createElement('div');
+      fly.className = 'rail-flyout';
+      fly.innerHTML = `<h4>${g.title}</h4>` + g.items.map(it =>
+        `<label class="rail-check${hidden.has(it.key) ? ' unchecked' : ''}">` +
+        `<input type="checkbox" data-key="${it.key}"${hidden.has(it.key) ? '' : ' checked'}>` +
+        `<span class="rc-label">${labelFor(it)}</span></label>`).join('');
+      wrap.appendChild(fly);
+      wrap.appendChild(tab);
+      g.wrap = wrap;
+      // Click pins the box open (useful on touch screens); click again unpins.
+      tab.addEventListener('click', () => wrap.classList.toggle('pinned'));
+      fly.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          if (cb.checked) hidden.delete(cb.dataset.key);
+          else hidden.add(cb.dataset.key);
+          cb.closest('.rail-check').classList.toggle('unchecked', !cb.checked);
+          apply();
+          persist();
+        });
+      });
+      rail.appendChild(wrap);
+    });
+    document.body.appendChild(rail);
+    document.addEventListener('click', (e) => {
+      if (!rail.contains(e.target)) {
+        rail.querySelectorAll('.rail-group.pinned').forEach(w => w.classList.remove('pinned'));
+      }
+    });
+
+    // Scroll-spy: only show the tab for the section currently on screen.
+    // "Active" = the section straddling a line 40% down the viewport;
+    // if none does (e.g. in a gap), the nearest one wins.
+    let spyTick = false;
+    const updateActiveTab = () => {
+      spyTick = false;
+      const mid = window.innerHeight * 0.4;
+      let active = null;
+      groups.forEach(g => {
+        if (g.section.style.display === 'none') return;
+        const r = g.section.getBoundingClientRect();
+        if (r.top <= mid && r.bottom >= mid) active = g;
+      });
+      if (!active) {
+        let bestDist = Infinity;
+        groups.forEach(g => {
+          if (g.section.style.display === 'none') return;
+          const r = g.section.getBoundingClientRect();
+          const d = Math.min(Math.abs(r.top - mid), Math.abs(r.bottom - mid));
+          if (d < bestDist) { bestDist = d; active = g; }
+        });
+      }
+      groups.forEach(g => {
+        if (!g.wrap) return;
+        const show = g === active;
+        if (!show) g.wrap.classList.remove('pinned');
+        g.wrap.style.display = show ? '' : 'none';
+      });
+    };
+    const onSpyScroll = () => {
+      if (spyTick) return;
+      spyTick = true;
+      requestAnimationFrame(updateActiveTab);
+    };
+    window.addEventListener('scroll', onSpyScroll, { passive: true });
+    window.addEventListener('resize', onSpyScroll, { passive: true });
+    updateActiveTab();
+
+    apply();
+  }
+
+  setupStickyShadow() {
+    const bar = document.querySelector('.sticky-top');
+    if (!bar) return;
+    const onScroll = () => {
+      if (window.scrollY > 4) bar.classList.add('is-scrolled');
+      else bar.classList.remove('is-scrolled');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+
+  setupCollapsibles() {
+    const STORAGE_KEY = 'msia_dash_collapsed_v1';
+    let collapsed = new Set();
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (Array.isArray(saved)) collapsed = new Set(saved);
+    } catch (e) {}
+
+    const persist = () => {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify([...collapsed])); } catch (e) {}
+    };
+
+    const sections = document.querySelectorAll('.collapsible-section');
+    sections.forEach(section => {
+      const key = section.dataset.sectionKey;
+      if (collapsed.has(key)) section.classList.add('collapsed');
+
+      const header = section.querySelector('.collapsible-header');
+      if (!header) return;
+      header.addEventListener('click', (e) => {
+        if (e.target.closest('button, input, select, a')) return;
+        section.classList.toggle('collapsed');
+        const isCollapsed = section.classList.contains('collapsed');
+        if (isCollapsed) collapsed.add(key); else collapsed.delete(key);
+        persist();
+        if (!isCollapsed) {
+          // Charts may have laid out at zero size while hidden — force a resize
+          requestAnimationFrame(() => {
+            Object.values(this.charts || {}).forEach(c => { if (c && c.resize) c.resize(); });
+          });
+        }
+      });
+    });
+
+    const expandAll = document.getElementById('btn-expand-all');
+    const collapseAll = document.getElementById('btn-collapse-all');
+    if (expandAll) {
+      expandAll.addEventListener('click', () => {
+        sections.forEach(s => {
+          s.classList.remove('collapsed');
+          collapsed.delete(s.dataset.sectionKey);
+        });
+        persist();
+        requestAnimationFrame(() => {
+          Object.values(this.charts || {}).forEach(c => { if (c && c.resize) c.resize(); });
+        });
+      });
+    }
+    if (collapseAll) {
+      collapseAll.addEventListener('click', () => {
+        sections.forEach(s => {
+          s.classList.add('collapsed');
+          collapsed.add(s.dataset.sectionKey);
+        });
+        persist();
+      });
+    }
+  }
+
+  renderInsights() {
+    const container = document.getElementById('insights-grid');
+    const meta = document.getElementById('insights-meta');
+    const containerNF = document.getElementById('insights-grid-nf');
+    const metaNF = document.getElementById('insights-meta-nf');
+    const src = this.data.insights;
+    if (!src) {
+      container.innerHTML = '<div class="empty-state">No insights available.</div>';
+      meta.textContent = '';
+      if (containerNF) containerNF.innerHTML = '';
+      if (metaNF) metaNF.textContent = '';
+      return;
+    }
+
+    const fmtPct = (p) => p == null ? 'n/a' : `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`;
+    const fmtDelta = (d) => {
+      if (d == null) return '';
+      const sign = d >= 0 ? '+' : '';
+      return `${sign}${fmtFull(d)}`;
+    };
+    const cls = (p) => {
+      if (p == null) return 'neutral';
+      if (p > 2) return 'pos';
+      if (p < -2) return 'neg';
+      return 'neutral';
+    };
+    const arrow = (p) => {
+      if (p == null) return '';
+      if (p > 2) return ' ↑';
+      if (p < -2) return ' ↓';
+      return ' →';
+    };
+    const cardHtml = (ins, withNarrative = true) => {
+      const strongMove = (
+        (ins.mom_pct != null && Math.abs(ins.mom_pct) >= 20) ||
+        (ins.yoy_pct != null && Math.abs(ins.yoy_pct) >= 20)
+      );
+      const bothDown = (ins.mom_pct != null && ins.mom_pct < -10) && (ins.yoy_pct != null && ins.yoy_pct < -10);
+      const cardCls = strongMove ? (bothDown ? 'insight-card notable notable-neg' : 'insight-card notable') : 'insight-card';
+      const note = ins.note ? `<div class="insight-note">${ins.note}</div>` : '';
+      const narrative = withNarrative ? `<div class="insight-narrative">${ins.narrative}</div>` : '';
+      return `<div class="${cardCls}">
+        <div class="insight-top">
+          <div>
+            <div class="insight-brand">${ins.brand}</div>
+            ${note}
+          </div>
+          <div class="insight-volume">${fmtFull(ins.cur)} in ${ins.period}</div>
+        </div>
+        ${narrative}
+        <div class="insight-metrics">
+          <div class="insight-metric">
+            <div class="insight-metric-label">MoM</div>
+            <div class="insight-metric-value ${cls(ins.mom_pct)}">${fmtPct(ins.mom_pct)}${arrow(ins.mom_pct)}</div>
+            <div class="insight-metric-sub">${fmtDelta(ins.mom_delta)} vs ${fmtFull(ins.prev)}</div>
+          </div>
+          <div class="insight-metric">
+            <div class="insight-metric-label">YoY</div>
+            <div class="insight-metric-value ${cls(ins.yoy_pct)}">${fmtPct(ins.yoy_pct)}${arrow(ins.yoy_pct)}</div>
+            <div class="insight-metric-sub">${fmtDelta(ins.yoy_delta)} vs ${fmtFull(ins.yoy)}</div>
+          </div>
+        </div>
+      </div>`;
+    };
+
+    // --- Focus brands ---
+    if (Array.isArray(src.items) && src.items.length) {
+      meta.textContent = `${src.latest_period} · MoM vs ${src.prior_month} · YoY vs ${src.yoy_period} · EON + DRB + pipeline brands (no volume floor)`;
+      container.innerHTML = src.items.map(ins => cardHtml(ins, true)).join('');
+    } else {
+      meta.textContent = '';
+      container.innerHTML = '<div class="empty-state">No focus brands configured.</div>';
+    }
+
+    // --- Top non-focus brands ---
+    if (containerNF && metaNF) {
+      const nf = Array.isArray(src.non_focus) ? src.non_focus : [];
+      if (nf.length) {
+        metaNF.textContent = `Top ${nf.length} by ${src.latest_period} volume (outside our focus list)`;
+        containerNF.innerHTML = nf.map(ins => cardHtml(ins, false)).join('');
+      } else {
+        metaNF.textContent = '';
+        containerNF.innerHTML = '';
+      }
+    }
+  }
+
+  setupMonthlyToggle() {
+    const group = document.getElementById('monthly-mode');
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === this.monthlyMode) return;
+        this.monthlyMode = mode;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        document.getElementById('monthly-sub').textContent =
+          mode === 'yoy'
+            ? 'Each year as its own line (Jan–Dec)'
+            : 'New vehicle registrations by month';
+        // Destroy chart so we can rebuild with different structure
+        if (this.charts.monthly) {
+          this.charts.monthly.destroy();
+          this.charts.monthly = null;
+        }
+        this.renderMonthly(this.getFilters());
+      });
+    });
+  }
+
+  setupFuelStackToggle() {
+    this.fuelStackMode = 'annual';
+    // Track hidden fuels across rebuilds so legend toggles persist
+    this.fuelStackHidden = new Set();
+    const group = document.getElementById('fuel-stack-mode');
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === this.fuelStackMode) return;
+        this.fuelStackMode = mode;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        if (this.charts.fuelStack) {
+          this.charts.fuelStack.destroy();
+          this.charts.fuelStack = null;
+        }
+        this.renderFuelStack(this.getFilters());
+      });
+    });
+  }
+
+  setupModelsToggle() {
+    this.modelsMode = 'total'; // 'total' | 'annual' | 'monthly'
+    const group = document.getElementById('models-mode');
+    if (!group) return;
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === this.modelsMode) return;
+        this.modelsMode = mode;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        this.renderModels(this.getFilters());
+      });
+    });
+  }
+
+  renderBrandOrigin(f) {
+    const origins = this.data.maker_origins || {};
+    const hasOrigins = Object.keys(origins).length > 0;
+    const meta = document.getElementById('origin-meta');
+    if (!hasOrigins) {
+      if (meta) meta.textContent = 'No brand-origin data loaded — drop maker_origins.json next to the data folder.';
+      return;
+    }
+    const ORIGIN_COLORS = {
+      'China':  COLORS[3],  // red
+      'Japan':  COLORS[0],  // blue
+      'Europe': COLORS[5],  // purple
+      'ASEAN':  COLORS[2],  // green
+      'Korea':  COLORS[1],  // orange
+      'US':     COLORS[4],  // cyan
+    };
+    const ORIGIN_ORDER = ['China', 'Japan', 'Europe', 'ASEAN', 'Korea', 'US', 'Other'];
+
+    // Apply filter (ignore maker — we want full picture by origin)
+    const rows = this.filterMMF(f, { ignoreMaker: true });
+
+    // Tally by origin
+    const byOrigin = {};
+    const byOriginMonth = {};
+    const byOriginBrand = {};
+    rows.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL) return; // skip pre-aggregated
+      const o = origins[r.mk] || 'Other';
+      byOrigin[o] = (byOrigin[o] || 0) + r.n;
+      const k = r.y * 100 + r.m;
+      if (!byOriginMonth[o]) byOriginMonth[o] = {};
+      byOriginMonth[o][k] = (byOriginMonth[o][k] || 0) + r.n;
+      if (!byOriginBrand[o]) byOriginBrand[o] = {};
+      byOriginBrand[o][r.mk] = (byOriginBrand[o][r.mk] || 0) + r.n;
+    });
+    const totalKnown = Object.values(byOrigin).reduce((s, n) => s + n, 0);
+
+    // ---- KPIs ----
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const pctOf = (n) => totalKnown ? (n / totalKnown * 100).toFixed(1) + '%' : '—';
+    set('kpi-origin-cn', pctOf(byOrigin['China'] || 0));
+    set('kpi-origin-cn-sub', `${fmtFull(byOrigin['China'] || 0)} units`);
+    set('kpi-origin-jp', pctOf(byOrigin['Japan'] || 0));
+    set('kpi-origin-jp-sub', `${fmtFull(byOrigin['Japan'] || 0)} units`);
+    set('kpi-origin-eu', pctOf(byOrigin['Europe'] || 0));
+    set('kpi-origin-eu-sub', `${fmtFull(byOrigin['Europe'] || 0)} units`);
+    set('kpi-origin-asean', pctOf(byOrigin['ASEAN'] || 0));
+    set('kpi-origin-asean-sub', `${fmtFull(byOrigin['ASEAN'] || 0)} units`);
+
+    // ---- Stacked monthly bar chart ----
+    // Build month-key list from the filtered rows
+    const monthKeySet = new Set();
+    Object.values(byOriginMonth).forEach(m => Object.keys(m).forEach(k => monthKeySet.add(+k)));
+    const monthKeys = [...monthKeySet].sort((a, b) => a - b);
+    const monthLabels = monthKeys.map(k => {
+      const y = Math.floor(k / 100), m = k % 100;
+      return `${MONTH_LABELS[m - 1]} ${String(y).slice(2)}`;
+    });
+    const presentOrigins = ORIGIN_ORDER.filter(o => byOrigin[o] !== undefined);
+    const monthlyDatasets = presentOrigins.map(o => ({
+      label: o,
+      data: monthKeys.map(k => (byOriginMonth[o] || {})[k] || 0),
+      backgroundColor: ORIGIN_COLORS[o] || '#9ca3af',
+      borderWidth: 0,
+      stack: 'main',
+    }));
+    const ctxM = document.getElementById('chart-origin-monthly').getContext('2d');
+    if (this.charts.originMonthly) {
+      this.charts.originMonthly.data.labels = monthLabels;
+      this.charts.originMonthly.data.datasets = monthlyDatasets;
+      this.charts.originMonthly.update('none');
+    } else {
+      this.charts.originMonthly = new Chart(ctxM, {
+        type: 'bar',
+        data: { labels: monthLabels, datasets: monthlyDatasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: c => `${c.dataset.label}: ${fmtFull(c.parsed.y)}`,
+                footer: items => {
+                  const t = items.reduce((s, it) => s + (it.parsed.y || 0), 0);
+                  return t ? `Total: ${fmtFull(t)}` : '';
+                },
+              },
+            },
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 24 } },
+            y: { stacked: true, beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } },
+          },
+        },
+      });
+    }
+
+    // ---- Origin mix doughnut ----
+    const mixLabels = presentOrigins;
+    const mixData = presentOrigins.map(o => byOrigin[o]);
+    const mixColors = presentOrigins.map(o => ORIGIN_COLORS[o] || '#9ca3af');
+    const ctxD = document.getElementById('chart-origin-mix').getContext('2d');
+    if (this.charts.originMix) {
+      this.charts.originMix.data.labels = mixLabels;
+      this.charts.originMix.data.datasets[0].data = mixData;
+      this.charts.originMix.data.datasets[0].backgroundColor = mixColors;
+      this.charts.originMix.update('none');
+    } else {
+      this.charts.originMix = new Chart(ctxD, {
+        type: 'doughnut',
+        data: { labels: mixLabels, datasets: [{ data: mixData, backgroundColor: mixColors, borderWidth: 1, borderColor: '#fff' }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '55%',
+          plugins: {
+            legend: { position: 'right', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: c => {
+                  const v = c.parsed;
+                  const t = c.dataset.data.reduce((s, x) => s + x, 0);
+                  return `${c.label}: ${fmtFull(v)} (${t ? (v / t * 100).toFixed(1) : 0}%)`;
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // ---- Origin → brands table ----
+    const tableEl = document.getElementById('table-origin');
+    if (tableEl) {
+      let html = '<table class="data-table"><thead><tr>';
+      html += '<th>Origin</th><th>Top brands (filtered window)</th><th class="numeric">Volume</th><th class="numeric">Share</th>';
+      html += '</tr></thead><tbody>';
+      presentOrigins.forEach(o => {
+        const v = byOrigin[o] || 0;
+        const brands = Object.entries(byOriginBrand[o] || {})
+          .sort((a, b) => b[1] - a[1]).slice(0, 8)
+          .map(([mk, n]) => `${mk} (${fmt(n)})`).join(', ');
+        const colorDot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${ORIGIN_COLORS[o] || '#9ca3af'};margin-right:6px;vertical-align:middle"></span>`;
+        html += `<tr>
+          <td><strong>${colorDot}${o}</strong></td>
+          <td>${brands || '<span class="muted">—</span>'}</td>
+          <td class="numeric">${fmtFull(v)}</td>
+          <td class="numeric">${pctOf(v)}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      tableEl.innerHTML = html;
+    }
+
+    const subM = document.getElementById('origin-monthly-sub');
+    if (subM) {
+      subM.textContent = `Stacked by origin · ${this._yearLabel(f)}${f.fuel && f.fuel !== '__all__' ? ` · fuel: ${f.fuel}` : ''} · ${fmtFull(totalKnown)} known-origin units`;
+    }
+  }
+
+  renderWholeMarket(f) {
+    // Whole-market view comes from vehicles_YYYY.csv files (cars +
+    // motorcycles + lorries + vans + buses + trailers + other).
+    // The maker filter is intentionally ignored since this dataset has
+    // no maker dimension; year and fuel filters still apply.
+    const data = this.data.by_category_m || [];
+    const wmSection = document.querySelector('[data-section-key="whole-market"]');
+    if (!data.length) {
+      if (wmSection) wmSection.style.display = 'none';
+      return;
+    }
+    if (wmSection) wmSection.style.display = '';
+    const rows = data.filter(r => {
+      if (f.years && !f.years.has(r.y)) return false;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return false;
+      return true;
+    });
+
+    // Aggregate by category
+    const catTotals = {};
+    rows.forEach(r => { catTotals[r.c] = (catTotals[r.c] || 0) + r.n; });
+    const total = Object.values(catTotals).reduce((s, n) => s + n, 0);
+
+    // Friendly labels & grouping for KPIs
+    const CAT_LABEL = {
+      car: 'Car', motorcycle: 'Motorcycle', lorry: 'Lorry',
+      van: 'Van', bus: 'Bus', trailer: 'Trailer', other: 'Other',
+    };
+    const COMMERCIAL_CATS = new Set(['lorry', 'van', 'bus', 'trailer']);
+    const moto = catTotals.motorcycle || 0;
+    const car = catTotals.car || 0;
+    const comm = Object.entries(catTotals).reduce((s, [c, n]) => s + (COMMERCIAL_CATS.has(c) ? n : 0), 0);
+
+    const fmtRM = (n) => fmtFull(n);
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('kpi-whole-total', fmt(total));
+    set('kpi-whole-total-sub', total ? `${fmtRM(total)} vehicles · ${this._yearLabel(f)}` : 'No data');
+    set('kpi-whole-moto', total ? (moto / total * 100).toFixed(1) + '%' : '—');
+    set('kpi-whole-moto-sub', `${fmtRM(moto)} motorcycles`);
+    set('kpi-whole-car', total ? (car / total * 100).toFixed(1) + '%' : '—');
+    set('kpi-whole-car-sub', `${fmtRM(car)} cars`);
+    set('kpi-whole-comm', total ? (comm / total * 100).toFixed(1) + '%' : '—');
+    set('kpi-whole-comm-sub', `${fmtRM(comm)} lorries / vans / buses / trailers`);
+
+    // ---- Monthly stacked bar (by category) ----
+    const vehYears = (this.data.veh_years || []).filter(y => !f.years || f.years.has(y));
+    const lastMonth = this.data.veh_last_month_by_year || {};
+    const monthKeys = [];
+    vehYears.forEach(y => {
+      const lm = +lastMonth[String(y)] || 12;
+      for (let m = 1; m <= lm; m++) monthKeys.push(y * 100 + m);
+    });
+    const monthLabels = monthKeys.map(k => {
+      const y = Math.floor(k / 100), m = k % 100;
+      return `${MONTH_LABELS[m - 1]} ${String(y).slice(2)}`;
+    });
+    // Order categories by total volume (largest at bottom of stack)
+    const cats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]).map(([c]) => c);
+    const grid = {};
+    cats.forEach(c => grid[c] = {});
+    rows.forEach(r => {
+      if (!grid[r.c]) grid[r.c] = {};
+      const k = r.y * 100 + r.m;
+      grid[r.c][k] = (grid[r.c][k] || 0) + r.n;
+    });
+    const monthlyDatasets = cats.map((c, i) => ({
+      label: CAT_LABEL[c] || c,
+      data: monthKeys.map(k => grid[c][k] || 0),
+      backgroundColor: COLORS[i % COLORS.length],
+      borderWidth: 0,
+      stack: 'main',
+    }));
+    const ctxM = document.getElementById('chart-whole-monthly').getContext('2d');
+    if (this.charts.wholeMonthly) {
+      this.charts.wholeMonthly.data.labels = monthLabels;
+      this.charts.wholeMonthly.data.datasets = monthlyDatasets;
+      this.charts.wholeMonthly.update('none');
+    } else {
+      this.charts.wholeMonthly = new Chart(ctxM, {
+        type: 'bar',
+        data: { labels: monthLabels, datasets: monthlyDatasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: c => `${c.dataset.label}: ${fmtFull(c.parsed.y)}`,
+                footer: items => {
+                  const t = items.reduce((s, it) => s + (it.parsed.y || 0), 0);
+                  return t ? `Total: ${fmtFull(t)}` : '';
+                },
+              },
+            },
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } },
+          },
+        },
+      });
+    }
+
+    // ---- Category mix doughnut ----
+    const mixLabels = cats.map(c => CAT_LABEL[c] || c);
+    const mixData = cats.map(c => catTotals[c]);
+    const mixColors = cats.map((_, i) => COLORS[i % COLORS.length]);
+    const ctxD = document.getElementById('chart-whole-mix').getContext('2d');
+    if (this.charts.wholeMix) {
+      this.charts.wholeMix.data.labels = mixLabels;
+      this.charts.wholeMix.data.datasets[0].data = mixData;
+      this.charts.wholeMix.data.datasets[0].backgroundColor = mixColors;
+      this.charts.wholeMix.update('none');
+    } else {
+      this.charts.wholeMix = new Chart(ctxD, {
+        type: 'doughnut',
+        data: { labels: mixLabels, datasets: [{ data: mixData, backgroundColor: mixColors, borderWidth: 1, borderColor: '#fff' }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '55%',
+          plugins: {
+            legend: { position: 'right', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: c => {
+                  const v = c.parsed;
+                  const t = c.dataset.data.reduce((s, x) => s + x, 0);
+                  return `${c.label}: ${fmtFull(v)} (${t ? (v / t * 100).toFixed(1) : 0}%)`;
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // ---- Category table with EV / hybrid share ----
+    // Compute fuel breakdown per category from the full (unfiltered-by-fuel)
+    // rows so we can still show EV share even when the fuel filter narrows
+    // the top stack.
+    const rowsAllFuel = data.filter(r => !f.years || f.years.has(r.y));
+    const fuelByCat = {};
+    rowsAllFuel.forEach(r => {
+      if (!fuelByCat[r.c]) fuelByCat[r.c] = { total: 0, ev: 0, hybrid: 0, diesel: 0 };
+      fuelByCat[r.c].total += r.n;
+      if (r.fl === 'electric') fuelByCat[r.c].ev += r.n;
+      else if (r.fl === 'hybrid_petrol' || r.fl === 'hybrid_diesel') fuelByCat[r.c].hybrid += r.n;
+      else if (r.fl === 'diesel' || r.fl === 'greendiesel') fuelByCat[r.c].diesel += r.n;
+    });
+    const tableEl = document.getElementById('table-whole-cat');
+    if (tableEl) {
+      const allCatsSorted = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+      const grand = allCatsSorted.reduce((s, [, n]) => s + n, 0);
+      let html = '<table class="data-table"><thead><tr>';
+      html += '<th>#</th><th>Category</th><th class="numeric">Registrations</th><th class="numeric">Share</th><th class="numeric">EV</th><th class="numeric">EV %</th><th class="numeric">Hybrid %</th><th class="numeric">Diesel %</th>';
+      html += '</tr></thead><tbody>';
+      allCatsSorted.forEach(([c, n], i) => {
+        const fb = fuelByCat[c] || { total: 0, ev: 0, hybrid: 0, diesel: 0 };
+        const evp = fb.total ? (fb.ev / fb.total * 100) : 0;
+        const hyp = fb.total ? (fb.hybrid / fb.total * 100) : 0;
+        const dip = fb.total ? (fb.diesel / fb.total * 100) : 0;
+        html += `<tr>
+          <td>${i+1}</td>
+          <td><strong>${CAT_LABEL[c] || c}</strong></td>
+          <td class="numeric">${fmtFull(n)}</td>
+          <td class="numeric">${grand ? (n / grand * 100).toFixed(1) + '%' : '—'}</td>
+          <td class="numeric">${fmtFull(fb.ev)}</td>
+          <td class="numeric">${evp.toFixed(2)}%</td>
+          <td class="numeric">${hyp.toFixed(2)}%</td>
+          <td class="numeric">${dip.toFixed(2)}%</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      tableEl.innerHTML = html;
+    }
+
+    const subM = document.getElementById('whole-monthly-sub');
+    if (subM) {
+      const yLab = vehYears.length === 1
+        ? String(vehYears[0])
+        : (vehYears.length ? `${vehYears[0]}–${vehYears[vehYears.length-1]}` : 'all years');
+      subM.textContent = `Stacked by category · ${yLab}${f.fuel && f.fuel !== '__all__' ? ` · fuel: ${f.fuel}` : ''}`;
+    }
+  }
+
+  setupFilters() {
+    // Year multi-select
+    this.selectedYears = new Set(); // empty = "All years"
+    this._setupYearMultiSelect();
+
+    // Month multi-select
+    this.selectedMonths = new Set(); // empty = "All months"
+    this._setupMonthMultiSelect();
+
+    // Maker options — alphabetical order, multi-select via checkboxes.
+    // Drop the "(no maker data)" sentinel that comes from rows ingested
+    // from the all-vehicles schema where maker/model are absent.
+    this.NO_MAKER_SENTINEL = '(no maker data)';
+    const makerTotals = {};
+    for (const r of this.data.monthly_mf) {
+      if (r.mk === this.NO_MAKER_SENTINEL) continue;
+      makerTotals[r.mk] = (makerTotals[r.mk] || 0) + r.n;
+    }
+    this.allMakers = Object.keys(makerTotals).sort((a, b) =>
+      a.toLowerCase().localeCompare(b.toLowerCase())
+    );
+    this.selectedMakers = new Set(); // empty = "All makers"
+    this._makerTotals = makerTotals;
+    this._setupMakerMultiSelect();
+
+    // Fuel options
+    const fuels = [...new Set(this.data.monthly_mf.map(r => r.fl))];
+    fuels.sort();
+    const fuelSel = document.getElementById('filter-fuel');
+    fuelSel.insertAdjacentHTML('beforeend', '<option value="__all__">All fuels</option>');
+    fuels.forEach(f => {
+      const label = FUEL_DISPLAY[f] || f;
+      fuelSel.insertAdjacentHTML('beforeend', `<option value="${f}">${label}</option>`);
+    });
+
+    const handler = () => this.render();
+    fuelSel.addEventListener('change', handler);
+    this._onMakersChange = handler;
+    this._onYearsChange = handler;
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      this.selectedYears.clear();
+      this._renderYearOptions();
+      this._updateYearButtonLabel();
+      this.selectedMonths.clear();
+      this._renderMonthOptions();
+      this._updateMonthButtonLabel();
+      this.selectedMakers.clear();
+      this._renderMakerOptions('');
+      this._updateMsButtonLabel();
+      fuelSel.value = '__all__';
+      handler();
+    });
+  }
+
+  _setupYearMultiSelect() {
+    const btn = document.getElementById('ms-year-btn');
+    const dropdown = document.getElementById('ms-year-dropdown');
+    const selectAll = document.getElementById('ms-year-all');
+    const clearAll = document.getElementById('ms-year-none');
+    const presets = document.getElementById('ms-year-presets');
+
+    this._renderYearOptions();
+    this._updateYearButtonLabel();
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (dropdown.hasAttribute('hidden')) {
+        dropdown.removeAttribute('hidden');
+      } else {
+        dropdown.setAttribute('hidden', '');
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && e.target !== btn) {
+        dropdown.setAttribute('hidden', '');
+      }
+    });
+
+    selectAll.addEventListener('click', () => {
+      this.selectedYears = new Set(this.data.years);
+      this._renderYearOptions();
+      this._updateYearButtonLabel();
+      this._onYearsChange();
+    });
+    clearAll.addEventListener('click', () => {
+      this.selectedYears.clear();
+      this._renderYearOptions();
+      this._updateYearButtonLabel();
+      this._onYearsChange();
+    });
+    presets.querySelectorAll('button[data-preset]').forEach(b => {
+      b.addEventListener('click', () => {
+        const years = [...this.data.years].sort((a, b) => a - b);
+        const latest = years[years.length - 1];
+        let selected;
+        if (b.dataset.preset === 'last5') selected = years.filter(y => y >= latest - 4);
+        else if (b.dataset.preset === 'last10') selected = years.filter(y => y >= latest - 9);
+        else if (b.dataset.preset === 'ytd') selected = [latest];
+        else selected = years;
+        this.selectedYears = new Set(selected);
+        this._renderYearOptions();
+        this._updateYearButtonLabel();
+        this._onYearsChange();
+      });
+    });
+  }
+
+  _renderYearOptions() {
+    const container = document.getElementById('ms-year-options');
+    const years = [...this.data.years].sort((a, b) => b - a); // most recent first
+    const totals = this.data.total_by_year || {};
+    let html = '';
+    years.forEach(y => {
+      const checked = this.selectedYears.has(y) ? 'checked' : '';
+      const safeId = 'yr-' + y;
+      const count = totals[String(y)] || 0;
+      html += `<label class="ms-option" for="${safeId}">
+        <input type="checkbox" id="${safeId}" data-year="${y}" ${checked}>
+        <span>${y}</span>
+        <span class="ms-count">${fmt(count)}</span>
+      </label>`;
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const year = +cb.dataset.year;
+        if (cb.checked) this.selectedYears.add(year);
+        else this.selectedYears.delete(year);
+        this._updateYearButtonLabel();
+        this._onYearsChange();
+      });
+    });
+  }
+
+  _updateYearButtonLabel() {
+    const btn = document.getElementById('ms-year-btn');
+    const n = this.selectedYears.size;
+    const total = this.data.years.length;
+    if (n === 0 || n === total) {
+      btn.textContent = 'All years';
+      return;
+    }
+    if (n === 1) {
+      btn.textContent = String([...this.selectedYears][0]);
+      return;
+    }
+    const sorted = [...this.selectedYears].sort((a, b) => a - b);
+    const contiguous = sorted[sorted.length - 1] - sorted[0] === sorted.length - 1;
+    btn.textContent = contiguous
+      ? `${sorted[0]}–${sorted[sorted.length - 1]}`
+      : `${n} years selected`;
+  }
+
+  _setupMonthMultiSelect() {
+    const btn = document.getElementById('ms-month-btn');
+    const dropdown = document.getElementById('ms-month-dropdown');
+    this._renderMonthOptions();
+    this._updateMonthButtonLabel();
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (dropdown.hasAttribute('hidden')) dropdown.removeAttribute('hidden');
+      else dropdown.setAttribute('hidden', '');
+    });
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && e.target !== btn) dropdown.setAttribute('hidden', '');
+    });
+    document.getElementById('ms-month-all').addEventListener('click', () => {
+      this.selectedMonths = new Set([1,2,3,4,5,6,7,8,9,10,11,12]);
+      this._renderMonthOptions(); this._updateMonthButtonLabel(); this.render();
+    });
+    document.getElementById('ms-month-none').addEventListener('click', () => {
+      this.selectedMonths.clear();
+      this._renderMonthOptions(); this._updateMonthButtonLabel(); this.render();
+    });
+  }
+
+  _renderMonthOptions() {
+    const container = document.getElementById('ms-month-options');
+    // volume per calendar month across the whole dataset, for context
+    if (!this._monthTotals) {
+      this._monthTotals = new Array(13).fill(0);
+      this.data.monthly_mf.forEach(r => { this._monthTotals[r.m] += r.n; });
+    }
+    let html = '';
+    for (let m = 1; m <= 12; m++) {
+      const checked = this.selectedMonths.has(m) ? 'checked' : '';
+      html += `<label class="ms-option" for="mo-${m}">
+        <input type="checkbox" id="mo-${m}" data-month="${m}" ${checked}>
+        <span>${MONTH_LABELS[m - 1]}</span>
+        <span class="ms-count">${fmt(this._monthTotals[m])}</span>
+      </label>`;
+    }
+    container.innerHTML = html;
+    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const m = +cb.dataset.month;
+        if (cb.checked) this.selectedMonths.add(m);
+        else this.selectedMonths.delete(m);
+        this._updateMonthButtonLabel();
+        this.render();
+      });
+    });
+  }
+
+  _updateMonthButtonLabel() {
+    const btn = document.getElementById('ms-month-btn');
+    const n = this.selectedMonths.size;
+    if (n === 0 || n === 12) { btn.textContent = 'All months'; return; }
+    const sorted = [...this.selectedMonths].sort((a, b) => a - b);
+    if (n === 1) { btn.textContent = MONTH_LABELS[sorted[0] - 1]; return; }
+    const contiguous = sorted[sorted.length - 1] - sorted[0] === sorted.length - 1;
+    btn.textContent = contiguous
+      ? `${MONTH_LABELS[sorted[0] - 1]}–${MONTH_LABELS[sorted[sorted.length - 1] - 1]}`
+      : `${n} months selected`;
+  }
+
+  _monthLabel(f) {
+    if (!f.months) return 'all months';
+    const sorted = [...f.months].sort((a, b) => a - b);
+    if (sorted.length === 1) return MONTH_LABELS[sorted[0] - 1];
+    const contiguous = sorted[sorted.length - 1] - sorted[0] === sorted.length - 1;
+    return contiguous
+      ? `${MONTH_LABELS[sorted[0] - 1]}–${MONTH_LABELS[sorted[sorted.length - 1] - 1]}`
+      : `${sorted.length} months`;
+  }
+
+  _yearLabel(f) {
+    const years = f.years
+      ? [...f.years].sort((a, b) => a - b)
+      : [...this.data.years].sort((a, b) => a - b);
+    if (!years.length) return '—';
+    if (years.length === 1) return String(years[0]);
+    const contiguous = years[years.length - 1] - years[0] === years.length - 1;
+    return contiguous
+      ? `${years[0]}–${years[years.length - 1]}`
+      : `${years.length} years selected`;
+  }
+
+  _setupMakerMultiSelect() {
+    const btn = document.getElementById('ms-btn');
+    const dropdown = document.getElementById('ms-dropdown');
+    const search = document.getElementById('ms-search');
+    const selectAll = document.getElementById('ms-all');
+    const clearAll = document.getElementById('ms-none');
+    const groupsEl = document.getElementById('ms-groups');
+
+    // Render group buttons (EON Group, DRB Group, etc.)
+    const groups = (this.data.insights && Array.isArray(this.data.insights.groups))
+      ? this.data.insights.groups : [];
+    if (groupsEl) {
+      if (groups.length) {
+        groupsEl.innerHTML = groups.map(g =>
+          `<button type="button" class="ms-group-btn" data-group-id="${g.id}">${g.display}</button>`
+        ).join('');
+        groupsEl.querySelectorAll('button').forEach(b => {
+          b.addEventListener('click', () => {
+            const g = groups.find(x => x.id === b.dataset.groupId);
+            if (!g) return;
+            const present = g.makers.filter(m => this.allMakers.includes(m));
+            this.selectedMakers = new Set(present);
+            this._renderMakerOptions(search.value.trim().toLowerCase());
+            this._updateMsButtonLabel();
+            this._onMakersChange();
+          });
+        });
+      } else {
+        groupsEl.style.display = 'none';
+      }
+    }
+
+    this._renderMakerOptions('');
+    this._updateMsButtonLabel();
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = dropdown.hasAttribute('hidden');
+      if (isHidden) {
+        dropdown.removeAttribute('hidden');
+        search.value = '';
+        this._renderMakerOptions('');
+        setTimeout(() => search.focus(), 0);
+      } else {
+        dropdown.setAttribute('hidden', '');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dropdown.contains(e.target) && e.target !== btn) {
+        dropdown.setAttribute('hidden', '');
+      }
+    });
+
+    search.addEventListener('input', () => {
+      this._renderMakerOptions(search.value.trim().toLowerCase());
+    });
+
+    selectAll.addEventListener('click', () => {
+      const query = search.value.trim().toLowerCase();
+      const visible = this.allMakers.filter(m => !query || m.toLowerCase().includes(query));
+      visible.forEach(m => this.selectedMakers.add(m));
+      this._renderMakerOptions(query);
+      this._updateMsButtonLabel();
+      this._onMakersChange();
+    });
+
+    clearAll.addEventListener('click', () => {
+      this.selectedMakers.clear();
+      this._renderMakerOptions(search.value.trim().toLowerCase());
+      this._updateMsButtonLabel();
+      this._onMakersChange();
+    });
+  }
+
+  _renderMakerOptions(query) {
+    const container = document.getElementById('ms-options');
+    const list = this.allMakers.filter(m => !query || m.toLowerCase().includes(query));
+    if (!list.length) {
+      container.innerHTML = '<div class="ms-empty">No matches</div>';
+      return;
+    }
+    let html = '';
+    list.forEach(m => {
+      const checked = this.selectedMakers.has(m) ? 'checked' : '';
+      const safeId = 'mk-' + m.replace(/[^a-z0-9]/gi, '_');
+      const count = this._makerTotals[m] || 0;
+      html += `<label class="ms-option" for="${safeId}">
+        <input type="checkbox" id="${safeId}" data-maker="${m.replace(/"/g,'&quot;')}" ${checked}>
+        <span>${m}</span>
+        <span class="ms-count">${fmt(count)}</span>
+      </label>`;
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const maker = cb.dataset.maker;
+        if (cb.checked) {
+          this.selectedMakers.add(maker);
+        } else {
+          this.selectedMakers.delete(maker);
+        }
+        this._updateMsButtonLabel();
+        this._onMakersChange();
+      });
+    });
+  }
+
+  _updateMsButtonLabel() {
+    const btn = document.getElementById('ms-btn');
+    const n = this.selectedMakers.size;
+    if (n === 0 || n === this.allMakers.length) {
+      btn.textContent = 'All makers';
+    } else if (n === 1) {
+      btn.textContent = [...this.selectedMakers][0];
+    } else {
+      btn.textContent = `${n} makers selected`;
+    }
+  }
+
+  getFilters() {
+    // Empty Set or every year checked = "no filter"
+    const nY = this.selectedYears.size;
+    const years = (nY === 0 || nY === this.data.years.length) ? null : this.selectedYears;
+    const nM = this.selectedMakers.size;
+    const makers = (nM === 0 || nM === this.allMakers.length) ? null : this.selectedMakers;
+    const nMo = this.selectedMonths ? this.selectedMonths.size : 0;
+    const months = (nMo === 0 || nMo === 12) ? null : this.selectedMonths;
+    return {
+      years: years,
+      months: months,
+      makers: makers,
+      fuel: document.getElementById('filter-fuel').value,
+    };
+  }
+
+  filterMMF(f, { ignoreMaker=false, ignoreFuel=false } = {}) {
+    const { years, months, makers, fuel } = f;
+    return this.data.monthly_mf.filter(r => {
+      if (years && !years.has(r.y)) return false;
+      if (months && !months.has(r.m)) return false;
+      if (!ignoreMaker && makers && !makers.has(r.mk)) return false;
+      if (!ignoreFuel && fuel !== '__all__' && r.fl !== fuel) return false;
+      return true;
+    });
+  }
+
+  // Generic dimension filter for state / colour / type tables
+  filterDim(table, f, dimKey, { excludeValues = null } = {}) {
+    const { years, makers, fuel } = f;
+    return this.data[table].filter(r => {
+      if (years && !years.has(r.y)) return false;
+      if (makers && !makers.has(r.mk)) return false;
+      if (fuel !== '__all__' && r.fl !== fuel) return false;
+      if (excludeValues && excludeValues.has(r[dimKey])) return false;
+      return true;
+    });
+  }
+
+  render() {
+    const f = this.getFilters();
+    this.renderKPIs(f);
+    this.renderMonthly(f);
+    this.renderFuel(f);
+    this.renderFuelStack(f);
+    this.renderMakers(f);
+    this.renderModels(f);
+    this.renderWholeMarket(f);
+    this.renderBrandOrigin(f);
+    this.renderState(f);
+    this.renderType(f);
+    this.renderColour(f);
+    this.renderBrandShare(f);
+    this.renderColourTrend(f);
+    this.renderTypeTrend(f);
+    this.renderLeaderboard(f);
+    this.renderEVShare(f);
+    this.renderEVBrand(f);
+    this.renderEVLeader(f);
+    this.renderCompare(f);
+    this.renderBrandCompare(f);
+    this._annualOnlyNotes(f);
+  }
+
+  // Some views are built from annual aggregates and cannot honour the
+  // month filter — say so on the card instead of silently ignoring it.
+  _annualOnlyNotes(f) {
+    ['chart-state', 'chart-type', 'chart-colour', 'chart-colour-trend', 'chart-type-trend', 'chart-compare'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const card = el.closest('.chart-container, .table-section');
+      const sub = card && card.querySelector('.chart-sub');
+      if (!sub) return;
+      if (sub.dataset.base == null) sub.dataset.base = sub.textContent;
+      sub.textContent = sub.dataset.base + (f.months ? ' · month filter not applied (annual data)' : '');
+    });
+  }
+
+  renderKPIs(f) {
+    const rows = this.filterMMF(f);
+    const total = rows.reduce((s, r) => s + r.n, 0);
+
+    // Month span
+    const monthSet = new Set();
+    rows.forEach(r => monthSet.add(r.y * 100 + r.m));
+    const nMonths = monthSet.size || 1;
+
+    // Top maker (ignore maker filter so result is meaningful)
+    const rowsNoMaker = this.filterMMF(f, { ignoreMaker: true });
+    const makerTotals = {};
+    rowsNoMaker.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL) return;
+      makerTotals[r.mk] = (makerTotals[r.mk] || 0) + r.n;
+    });
+    const topMaker = Object.entries(makerTotals).sort((a,b)=>b[1]-a[1])[0];
+    const makerTotalAll = Object.values(makerTotals).reduce((s,n)=>s+n,0);
+
+    // Top fuel (ignore fuel filter)
+    const rowsNoFuel = this.filterMMF(f, { ignoreFuel: true });
+    const fuelTotals = {};
+    rowsNoFuel.forEach(r => { fuelTotals[r.fl] = (fuelTotals[r.fl] || 0) + r.n; });
+    const topFuel = Object.entries(fuelTotals).sort((a,b)=>b[1]-a[1])[0];
+    const fuelTotalAll = rowsNoFuel.reduce((s,r)=>s+r.n,0);
+
+    document.getElementById('kpi-total').textContent = fmt(total);
+    document.getElementById('kpi-total-sub').textContent =
+      `${fmtFull(total)} vehicles · ${this._yearLabel(f)}` + (f.months ? ` · ${this._monthLabel(f)}` : '');
+
+    document.getElementById('kpi-avg').textContent = fmt(total / nMonths);
+    document.getElementById('kpi-avg-sub').textContent =
+      `Across ${nMonths} month${nMonths===1?'':'s'}`;
+
+    if (topMaker) {
+      document.getElementById('kpi-maker').textContent = topMaker[0];
+      document.getElementById('kpi-maker-sub').textContent =
+        `${fmt(topMaker[1])} (${pct(topMaker[1], makerTotalAll)})`;
+    } else {
+      document.getElementById('kpi-maker').textContent = '—';
+      document.getElementById('kpi-maker-sub').textContent = 'No data';
+    }
+
+    if (topFuel) {
+      document.getElementById('kpi-fuel').textContent = FUEL_DISPLAY[topFuel[0]] || topFuel[0];
+      document.getElementById('kpi-fuel-sub').textContent =
+        `${fmt(topFuel[1])} (${pct(topFuel[1], fuelTotalAll)})`;
+    } else {
+      document.getElementById('kpi-fuel').textContent = '—';
+      document.getElementById('kpi-fuel-sub').textContent = 'No data';
+    }
+  }
+
+  renderMonthly(f) {
+    const ctx = document.getElementById('chart-monthly').getContext('2d');
+    const rows = this.filterMMF(f);
+
+    // Resolve effective years from the filter (null = all)
+    const allYears = [...this.data.years].sort((a, b) => a - b);
+    const selYears = f.years ? [...f.years].sort((a, b) => a - b) : allYears;
+
+    if (this.monthlyMode === 'yoy') {
+      // One line per year, x-axis is Jan..Dec. Incomplete years terminate
+      // at their last data month (from last_month_by_year).
+      const lastMonth = this.data.last_month_by_year || {};
+      const byYearMonth = {};
+      rows.forEach(r => {
+        if (!byYearMonth[r.y]) byYearMonth[r.y] = new Array(12).fill(0);
+        byYearMonth[r.y][r.m - 1] += r.n;
+      });
+      // Drop years where the active filter selection produces zero
+      // registrations across the entire year — otherwise the legend
+      // gets cluttered with flatlined-on-zero lines (e.g. picking a
+      // brand that only entered in 2024 should show only 2024+).
+      const years = selYears.filter(y => {
+        const arr = byYearMonth[y];
+        if (!arr) return false;
+        return arr.some(v => v > 0);
+      });
+      const datasets = years.map((y, i) => {
+        const color = COLORS[i % COLORS.length];
+        const maxM = +lastMonth[String(y)] || 12;
+        const base = byYearMonth[y] || new Array(12).fill(0);
+        // Null-out months past the last observed month, and months excluded
+        // by the month filter
+        const data = base.map((v, idx) =>
+          ((idx + 1) > maxM || (f.months && !f.months.has(idx + 1))) ? null : v);
+        return {
+          label: String(y),
+          data,
+          borderColor: color,
+          backgroundColor: color + '22',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
+          spanGaps: false,
+        };
+      });
+
+      if (this.charts.monthly) {
+        this.charts.monthly.data.labels = MONTH_LABELS;
+        this.charts.monthly.data.datasets = datasets;
+        this.charts.monthly.update('none');
+        return;
+      }
+      this.charts.monthly = new Chart(ctx, {
+        type: 'line',
+        data: { labels: MONTH_LABELS, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { usePointStyle: true, padding: 14, boxWidth: 8, font: { size: 12 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)}`
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: {
+              beginAtZero: true,
+              grid: { color: '#f1f3f5' },
+              ticks: { callback: v => fmt(v) }
+            }
+          }
+        }
+      });
+      return;
+    }
+
+    // Continuous mode — single series spanning min(selected) → max(selected).
+    // Months in unselected years render as null so non-contiguous picks show
+    // as visible gaps rather than fabricated zero values.
+    const monthly = {};
+    rows.forEach(r => {
+      const key = r.y * 100 + r.m;
+      monthly[key] = (monthly[key] || 0) + r.n;
+    });
+    const selSet = new Set(selYears);
+    const lastMonthMap = this.data.last_month_by_year || {};
+    const yStart = selYears[0];
+    const yEnd = selYears[selYears.length - 1];
+    const keys = [];
+    for (let y = yStart; y <= yEnd; y++) {
+      for (let m = 1; m <= 12; m++) keys.push(y * 100 + m);
+    }
+    const labels = keys.map(k => {
+      const y = Math.floor(k / 100), m = k % 100;
+      return `${MONTH_LABELS[m-1]} ${String(y).slice(2)}`;
+    });
+    const values = keys.map(k => {
+      const y = Math.floor(k / 100), m = k % 100;
+      if (!selSet.has(y)) return null;
+      if (f.months && !f.months.has(m)) return null;
+      // Cap partial-year data at the last observed month
+      const lm = +lastMonthMap[String(y)] || 12;
+      if (m > lm) return null;
+      return monthly[k] || 0;
+    });
+
+    if (this.charts.monthly) {
+      this.charts.monthly.data.labels = labels;
+      this.charts.monthly.data.datasets = [{
+        label: 'Registrations',
+        data: values,
+        borderColor: COLORS[0],
+        backgroundColor: COLORS[0] + '22',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        spanGaps: false,
+      }];
+      this.charts.monthly.update('none');
+      return;
+    }
+    this.charts.monthly = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Registrations',
+          data: values,
+          borderColor: COLORS[0],
+          backgroundColor: COLORS[0] + '22',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          spanGaps: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `Registrations: ${fmtFull(ctx.parsed.y)}`
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: {
+            beginAtZero: true,
+            grid: { color: '#f1f3f5' },
+            ticks: { callback: v => fmt(v) }
+          }
+        }
+      }
+    });
+  }
+
+  renderFuel(f) {
+    const rows = this.filterMMF(f, { ignoreFuel: true });
+    const totals = {};
+    rows.forEach(r => { totals[r.fl] = (totals[r.fl] || 0) + r.n; });
+    const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    const labels = entries.map(([f]) => FUEL_DISPLAY[f] || f);
+    const values = entries.map(([,n]) => n);
+
+    const ctx = document.getElementById('chart-fuel').getContext('2d');
+    if (this.charts.fuel) {
+      this.charts.fuel.data.labels = labels;
+      this.charts.fuel.data.datasets[0].data = values;
+      this.charts.fuel.update('none');
+      return;
+    }
+    this.charts.fuel = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: COLORS,
+          borderColor: '#fff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'right', labels: { usePointStyle: true, padding: 12, boxWidth: 8, font: { size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                return `${ctx.label}: ${fmtFull(ctx.parsed)} (${pct(ctx.parsed, total)})`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  renderFuelStack(f) {
+    // Always show the full fuel breakdown of the selected makers/years —
+    // the fuel filter is intentionally ignored so users can compare fuels.
+    const rows = this.filterMMF(f, { ignoreFuel: true });
+    const ctx = document.getElementById('chart-fuel-stack').getContext('2d');
+
+    const allYears = [...this.data.years].sort((a, b) => a - b);
+    const selYears = f.years ? [...f.years].sort((a, b) => a - b) : allYears;
+    const lastMonthMap = this.data.last_month_by_year || {};
+
+    // Discover fuels in the data, ordered by total volume (largest at bottom)
+    const fuelTotals = {};
+    rows.forEach(r => { fuelTotals[r.fl] = (fuelTotals[r.fl] || 0) + r.n; });
+    const fuels = Object.keys(fuelTotals).sort((a, b) => fuelTotals[b] - fuelTotals[a]);
+
+    // counts[fuel] = array<number|null> (raw counts, by period); a null means
+    // the period is not in the selected window (so the bar leaves a gap)
+    const counts = {};
+    fuels.forEach(fl => { counts[fl] = []; });
+    let labels;
+
+    if (this.fuelStackMode === 'monthly') {
+      const yStart = selYears[0];
+      const yEnd = selYears[selYears.length - 1];
+      const selSet = new Set(selYears);
+      const keys = [];
+      for (let y = yStart; y <= yEnd; y++) {
+        for (let m = 1; m <= 12; m++) keys.push(y * 100 + m);
+      }
+      labels = keys.map(k => {
+        const y = Math.floor(k / 100), m = k % 100;
+        return `${MONTH_LABELS[m - 1]} ${String(y).slice(2)}`;
+      });
+      const grid = {};
+      fuels.forEach(fl => grid[fl] = {});
+      rows.forEach(r => {
+        grid[r.fl][r.y * 100 + r.m] = (grid[r.fl][r.y * 100 + r.m] || 0) + r.n;
+      });
+      keys.forEach(k => {
+        const y = Math.floor(k / 100), m = k % 100;
+        const lm = +lastMonthMap[String(y)] || 12;
+        const inWindow = selSet.has(y) && m <= lm && (!f.months || f.months.has(m));
+        fuels.forEach(fl => {
+          counts[fl].push(inWindow ? (grid[fl][k] || 0) : null);
+        });
+      });
+    } else {
+      // Annual mode — one bar per selected year
+      labels = selYears.map(String);
+      const grid = {};
+      fuels.forEach(fl => grid[fl] = {});
+      rows.forEach(r => { grid[r.fl][r.y] = (grid[r.fl][r.y] || 0) + r.n; });
+      selYears.forEach(y => {
+        fuels.forEach(fl => counts[fl].push(grid[fl][y] || 0));
+      });
+    }
+
+    // Effective period totals — sum across only the *visible* fuels so the
+    // bars always reach 100% of what the legend currently shows.
+    const hiddenSet = this.fuelStackHidden || new Set();
+    const visibleFuels = fuels.filter(fl => !hiddenSet.has(fl));
+    const totals = labels.map((_, i) => {
+      let t = 0, sawValue = false;
+      visibleFuels.forEach(fl => {
+        const v = counts[fl][i];
+        if (v != null) { t += v; sawValue = true; }
+      });
+      return sawValue ? t : null;
+    });
+
+    // Build percentage rows
+    const pcts = {};
+    fuels.forEach(fl => {
+      pcts[fl] = counts[fl].map((v, i) => {
+        if (v == null || totals[i] == null || totals[i] === 0) return null;
+        return (v / totals[i]) * 100;
+      });
+    });
+
+    const fuelDatasets = fuels.map((fl, i) => ({
+      type: 'bar',
+      label: FUEL_DISPLAY[fl] || fl,
+      data: pcts[fl],
+      _rawCounts: counts[fl],
+      _periodTotals: totals,
+      backgroundColor: COLORS[i % COLORS.length],
+      borderColor: '#fff',
+      borderWidth: this.fuelStackMode === 'monthly' ? 0 : 1,
+      stack: 'main',
+      yAxisID: 'y',
+      hidden: hiddenSet.has(fl),
+      _fuelKey: fl,
+    }));
+
+    const totalDataset = {
+      type: 'line',
+      label: 'Total volume',
+      data: totals,
+      yAxisID: 'yTotal',
+      borderColor: '#0B1D51',
+      backgroundColor: '#0B1D51',
+      borderWidth: 2,
+      pointRadius: this.fuelStackMode === 'monthly' ? 0 : 3,
+      pointHoverRadius: 5,
+      tension: 0.25,
+      spanGaps: false,
+      order: 0, // draw on top of bars
+      _isTotal: true,
+    };
+
+    const datasets = [...fuelDatasets, totalDataset];
+
+    if (this.charts.fuelStack) {
+      this.charts.fuelStack.data.labels = labels;
+      this.charts.fuelStack.data.datasets = datasets;
+      this.charts.fuelStack.options.scales.y.max = 100;
+      this.charts.fuelStack.update('none');
+      return;
+    }
+
+    const self = this;
+    this.charts.fuelStack = new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              padding: 12,
+              boxWidth: 10,
+              font: { size: 12 },
+            },
+            // Persist hide/show across re-renders so the user's selection
+            // survives filter changes. Re-render to recompute percentages
+            // against only the visible fuels.
+            onClick: (e, legendItem, legend) => {
+              const idx = legendItem.datasetIndex;
+              const ds = legend.chart.data.datasets[idx];
+              if (ds && ds._isTotal) {
+                // Toggling the total line is just a visibility flip, no
+                // need to recompute the bar percentages.
+                const visible = legend.chart.isDatasetVisible(idx);
+                if (visible) legend.chart.hide(idx);
+                else legend.chart.show(idx);
+                return;
+              }
+              if (!ds || !ds._fuelKey) return;
+              if (self.fuelStackHidden.has(ds._fuelKey)) {
+                self.fuelStackHidden.delete(ds._fuelKey);
+              } else {
+                self.fuelStackHidden.add(ds._fuelKey);
+              }
+              self.renderFuelStack(self.getFilters());
+            },
+          },
+          tooltip: {
+            callbacks: {
+              label: (item) => {
+                const ds = item.dataset;
+                if (ds._isTotal) {
+                  const v = item.parsed.y;
+                  return v == null ? '' : `Total volume: ${fmtFull(v)}`;
+                }
+                const pct = item.parsed.y;
+                if (pct == null) return '';
+                const raw = (ds._rawCounts && ds._rawCounts[item.dataIndex]) || 0;
+                return `${ds.label}: ${pct.toFixed(1)}%  (${fmtFull(raw)})`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { display: false },
+            ticks: { autoSkip: true, maxTicksLimit: 18 },
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true,
+            max: 100,
+            grid: { color: '#f1f3f5' },
+            title: { display: true, text: 'Share of period (%)', font: { size: 11 } },
+            ticks: { callback: v => v + '%' },
+          },
+          yTotal: {
+            position: 'right',
+            beginAtZero: true,
+            grid: { display: false },
+            title: { display: true, text: 'Total volume', font: { size: 11 } },
+            ticks: { callback: v => fmt(v) },
+          },
+        },
+      },
+    });
+  }
+
+  // Top-6 model mix lines for the makers-chart tooltip. Shares are
+  // relative to the maker's bar total; everything beyond the top 6
+  // (including models trimmed from by_model) rolls into "Others".
+  _modelShareLines(maker, barTotal) {
+    const f = this.getFilters();
+    const totals = {};
+    const source = f.months ? this.data.by_model_m : this.data.by_model;
+    source.forEach(r => {
+      if (r.mk !== maker) return;
+      if (f.years && !f.years.has(r.y)) return;
+      if (f.months && !f.months.has(r.m)) return;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return;
+      totals[r.md] = (totals[r.md] || 0) + r.n;
+    });
+    const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    if (!entries.length || !barTotal) return [];
+    const top = entries.slice(0, 6);
+    const lines = ['', 'Model mix:'];
+    top.forEach(([md, n]) => lines.push(`${md}: ${pct(n, barTotal)} (${fmtFull(n)})`));
+    const restN = barTotal - top.reduce((sum, [, n]) => sum + n, 0);
+    if (restN > 0) lines.push(`Others: ${pct(restN, barTotal)} (${fmtFull(restN)})`);
+    return lines;
+  }
+
+  renderMakers(f) {
+    const rows = this.filterMMF(f, { ignoreMaker: true });
+    const totals = {};
+    rows.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL) return;
+      totals[r.mk] = (totals[r.mk] || 0) + r.n;
+    });
+    const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0, 15);
+    const labels = entries.map(([m]) => m);
+    const values = entries.map(([,n]) => n);
+
+    const ctx = document.getElementById('chart-makers').getContext('2d');
+    if (this.charts.makers) {
+      this.charts.makers.data.labels = labels;
+      this.charts.makers.data.datasets[0].data = values;
+      this.charts.makers.update('none');
+      return;
+    }
+    this.charts.makers = new Chart(ctx, {
+      type: 'bar',
+      plugins: [BAR_VALUE_PLUGIN],
+      data: {
+        labels,
+        datasets: [{
+          label: 'Registrations',
+          data: values,
+          backgroundColor: COLORS[0] + 'CC',
+          borderColor: COLORS[0],
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          barValues: { enabled: true },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: item => `${fmtFull(item.parsed.x)} registrations`,
+              afterBody: items => this._modelShareLines(items[0].label, items[0].parsed.x),
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            grace: '12%',
+            grid: { color: '#f1f3f5' },
+            ticks: { callback: v => fmt(v) }
+          },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  renderModels(f) {
+    const container = document.getElementById('table-models');
+    const titleEl = document.getElementById('models-title');
+    const subEl = document.getElementById('models-sub');
+
+    const selectedMakers = f.makers ? [...f.makers] : [];
+    const isSingle = selectedMakers.length === 1;
+    const grouped = !isSingle && selectedMakers.length >= 2 && selectedMakers.length <= 6;
+    const mode = this.modelsMode || 'total';
+    const useMonths = !!f.months;
+
+    const allYears = [...this.data.years].sort((a, b) => a - b);
+    const yearsForView = f.years ? allYears.filter(y => f.years.has(y)) : allYears;
+    const rowKey = (mk, md) => mk + '||' + md;
+
+    // When the month filter is active, read from the month-level table
+    const source = useMonths ? this.data.by_model_m : this.data.by_model;
+    const passes = (r) => {
+      if (f.years && !f.years.has(r.y)) return false;
+      if (useMonths && !f.months.has(r.m)) return false;
+      if (f.makers && !f.makers.has(r.mk)) return false;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return false;
+      return true;
+    };
+
+    const totalsLifetime = {};
+    source.forEach(r => {
+      if (!passes(r)) return;
+      const k = rowKey(r.mk, r.md);
+      totalsLifetime[k] = (totalsLifetime[k] || 0) + r.n;
+    });
+    const sorted = Object.entries(totalsLifetime).sort((a, b) => b[1] - a[1]);
+    if (!sorted.length) {
+      container.innerHTML = '<div class="empty-state">No data for current filters</div>';
+      if (subEl) subEl.textContent = 'No data for current filters';
+      return;
+    }
+    const grandTotal = sorted.reduce((s, [, n]) => s + n, 0);
+
+    let rowList = isSingle ? sorted : sorted.slice(0, 25);
+    let groups = null;
+    if (grouped) {
+      // Group every model of the selected brands under its brand, with
+      // per-brand subtotals — no calculator needed.
+      const byBrand = {};
+      sorted.forEach(([key, n]) => {
+        const mk = key.split('||')[0];
+        if (!byBrand[mk]) byBrand[mk] = { mk, rows: [], total: 0 };
+        byBrand[mk].rows.push([key, n]);
+        byBrand[mk].total += n;
+      });
+      groups = Object.values(byBrand).sort((a, b) => b.total - a.total);
+      rowList = sorted;
+    }
+    const displayRows = grouped ? groups.flatMap(g => g.rows) : rowList;
+
+    // ---------- Title / subtitle (with running total) ----------
+    if (titleEl && subEl) {
+      if (isSingle) titleEl.textContent = `${selectedMakers[0]} model lineup`;
+      else if (grouped) titleEl.textContent = `Brand vs brand — ${groups.map(g => g.mk).join(' · ')}`;
+      else titleEl.textContent = 'Top models';
+      const yearsLabel = yearsForView.length === 0
+        ? 'all years'
+        : yearsForView.length === 1
+          ? String(yearsForView[0])
+          : `${yearsForView.length} years (${yearsForView[0]}–${yearsForView[yearsForView.length - 1]})`;
+      const modeLabel = { total: 'Total', annual: 'Annual', monthly: 'Monthly' }[mode];
+      const monthNote = useMonths ? ` · ${this._monthLabel(f)}` : '';
+      let countLabel;
+      if (isSingle) countLabel = `${rowList.length} ${selectedMakers[0]} model${rowList.length === 1 ? '' : 's'}`;
+      else if (grouped) countLabel = groups.map(g => `${g.mk} ${fmtFull(g.total)}`).join('  vs  ');
+      else countLabel = `top ${rowList.length} models`;
+      subEl.textContent = `${modeLabel} view · ${countLabel} · ${yearsLabel}${monthNote} · ${fmtFull(grandTotal)} registrations in view`;
+    }
+
+    // ---------- Total mode ----------
+    if (mode === 'total') {
+      const max = sorted[0] ? sorted[0][1] : 0;
+      let html = `<table class="data-table${isSingle ? ' single-maker' : ''}"><thead><tr>`;
+      if (isSingle) html += '<th>#</th><th>Model</th><th class="numeric">Registrations</th><th class="numeric">Share</th>';
+      else          html += '<th>#</th><th>Maker</th><th>Model</th><th class="numeric">Registrations</th><th class="numeric">Share</th>';
+      html += '</tr></thead><tbody>';
+      const rowHtml = ([key, n], i) => {
+        const [maker, model] = key.split('||');
+        const barPct = max ? (n / max * 100) : 0;
+        const numericCell = `<td class="numeric bar-cell"><div class="bar-fill" style="width:${barPct}%"></div><span>${fmtFull(n)}</span></td>`;
+        return isSingle
+          ? `<tr><td>${i}</td><td>${model}</td>${numericCell}<td class="numeric">${pct(n, grandTotal)}</td></tr>`
+          : `<tr><td>${i}</td><td>${this._mkCell(maker)}</td><td>${model}</td>${numericCell}<td class="numeric">${pct(n, grandTotal)}</td></tr>`;
+      };
+      if (grouped) {
+        groups.forEach(g => {
+          g.rows.forEach((row, i) => { html += rowHtml(row, i + 1); });
+          html += `<tr class="row-brand-subtotal"><td></td><td colspan="2">${g.mk} — total</td>` +
+            `<td class="numeric">${fmtFull(g.total)}</td><td class="numeric">${pct(g.total, grandTotal)}</td></tr>`;
+        });
+        html += `<tr class="row-footer"><td></td><td colspan="2"><strong>All selected brands</strong></td>` +
+          `<td class="numeric"><strong>${fmtFull(grandTotal)}</strong></td><td class="numeric"><strong>100.0%</strong></td></tr>`;
+      } else {
+        rowList.forEach((row, i) => { html += rowHtml(row, i + 1); });
+      }
+      html += '</tbody></table>';
+      container.innerHTML = html;
+      return;
+    }
+
+    // Helper: drop runs of >MAX_EMPTY_RUN consecutive zero-registration years
+    const MAX_EMPTY_RUN = 3;
+    function trimEmptyYearRuns(years, yearTotals) {
+      const keep = years.map(() => true);
+      let runStart = -1;
+      for (let i = 0; i <= years.length; i++) {
+        const isZero = i < years.length && (yearTotals[years[i]] || 0) === 0;
+        if (isZero) {
+          if (runStart === -1) runStart = i;
+        } else {
+          if (runStart !== -1 && (i - runStart) > MAX_EMPTY_RUN) {
+            for (let j = runStart; j < i; j++) keep[j] = false;
+          }
+          runStart = -1;
+        }
+      }
+      return years.filter((_, i) => keep[i]);
+    }
+
+    // ---------- Annual / Monthly modes share one renderer ----------
+    // Build per-row column cells; colKeys are years (annual) or y*100+m (monthly)
+    const cells = {};
+    let colKeys, colName;
+    if (mode === 'annual') {
+      source.forEach(r => {
+        if (!passes(r)) return;
+        const k = rowKey(r.mk, r.md);
+        if (!(k in totalsLifetime)) return;
+        if (!cells[k]) cells[k] = {};
+        cells[k][r.y] = (cells[k][r.y] || 0) + r.n;
+      });
+      const rawCols = yearsForView.length ? yearsForView : allYears;
+      const colTotalsRaw = {};
+      rawCols.forEach(c => colTotalsRaw[c] = 0);
+      displayRows.forEach(([key]) => rawCols.forEach(c => { colTotalsRaw[c] += (cells[key] && cells[key][c]) || 0; }));
+      colKeys = trimEmptyYearRuns(rawCols, colTotalsRaw);
+      this._modelsHiddenCols = rawCols.length - colKeys.length;
+      colName = (c) => String(c);
+    } else {
+      this.data.by_model_m.forEach(r => {
+        if (!passes(r)) return;
+        const k = rowKey(r.mk, r.md);
+        if (!(k in totalsLifetime)) return;
+        if (!cells[k]) cells[k] = {};
+        const ck = r.y * 100 + r.m;
+        cells[k][ck] = (cells[k][ck] || 0) + r.n;
+      });
+      const lastMonthMap = this.data.last_month_by_year || {};
+      const rawYearList = yearsForView.length ? yearsForView : allYears;
+      const yearTotalsForTrim = {};
+      rawYearList.forEach(y => yearTotalsForTrim[y] = 0);
+      displayRows.forEach(([key]) => {
+        rawYearList.forEach(y => {
+          const lm = +lastMonthMap[String(y)] || 12;
+          for (let m = 1; m <= lm; m++) yearTotalsForTrim[y] += (cells[key] && cells[key][y * 100 + m]) || 0;
+        });
+      });
+      const yearList = trimEmptyYearRuns(rawYearList, yearTotalsForTrim);
+      this._modelsHiddenCols = rawYearList.length - yearList.length;
+      colKeys = [];
+      yearList.forEach(y => {
+        const lm = +lastMonthMap[String(y)] || 12;
+        for (let m = 1; m <= lm; m++) {
+          if (useMonths && !f.months.has(m)) continue;
+          colKeys.push(y * 100 + m);
+        }
+      });
+      colName = (ck) => `${MONTH_LABELS[(ck % 100) - 1]} ${String(Math.floor(ck / 100)).slice(2)}`;
+    }
+
+    const colTotals = {};
+    colKeys.forEach(c => colTotals[c] = 0);
+    displayRows.forEach(([key]) => colKeys.forEach(c => { colTotals[c] += (cells[key] && cells[key][c]) || 0; }));
+
+    const compact = mode === 'monthly' ? ' data-table-compact' : '';
+    let html = `<table class="data-table${compact}${isSingle ? ' single-maker' : ''}"><thead><tr>`;
+    html += '<th>#</th>';
+    if (!isSingle) html += '<th>Maker</th>';
+    html += '<th>Model</th>';
+    colKeys.forEach(c => html += `<th class="numeric">${colName(c)}</th>`);
+    html += '<th class="numeric">Total</th></tr></thead><tbody>';
+
+    const rowHtml = ([key, n], i) => {
+      const [maker, model] = key.split('||');
+      let h = `<tr><td>${i}</td>`;
+      if (!isSingle) h += `<td>${this._mkCell(maker)}</td>`;
+      h += `<td>${model}</td>`;
+      colKeys.forEach(c => {
+        const v = (cells[key] && cells[key][c]) || 0;
+        h += `<td class="numeric">${v ? fmtFull(v) : '<span class="muted">—</span>'}</td>`;
+      });
+      h += `<td class="numeric"><strong>${fmtFull(n)}</strong></td></tr>`;
+      return h;
+    };
+
+    if (grouped) {
+      groups.forEach(g => {
+        g.rows.forEach((row, i) => { html += rowHtml(row, i + 1); });
+        html += `<tr class="row-brand-subtotal"><td></td><td colspan="2">${g.mk} — total</td>`;
+        colKeys.forEach(c => {
+          let sum = 0;
+          g.rows.forEach(([key]) => { sum += (cells[key] && cells[key][c]) || 0; });
+          html += `<td class="numeric">${sum ? fmtFull(sum) : '<span class="muted">—</span>'}</td>`;
+        });
+        html += `<td class="numeric">${fmtFull(g.total)}</td></tr>`;
+      });
+    } else {
+      rowList.forEach((row, i) => { html += rowHtml(row, i + 1); });
+    }
+
+    // Grand-total footer
+    html += '<tr class="row-footer"><td></td>';
+    if (!isSingle) html += '<td></td>';
+    html += `<td><strong>Total</strong></td>`;
+    colKeys.forEach(c => html += `<td class="numeric"><strong>${fmtFull(colTotals[c])}</strong></td>`);
+    html += `<td class="numeric"><strong>${fmtFull(grandTotal)}</strong></td></tr>`;
+    html += '</tbody></table>';
+    if (this._modelsHiddenCols > 0) {
+      html += `<div class="hidden-years-note">${this._modelsHiddenCols} year${this._modelsHiddenCols === 1 ? '' : 's'} with no registrations hidden</div>`;
+    }
+    container.innerHTML = html;
+  }
+
+  // Destroy-and-recreate helper for charts whose dataset count varies
+  _replaceChart(name, canvasId, config) {
+    if (this.charts[name]) this.charts[name].destroy();
+    this.charts[name] = new Chart(document.getElementById(canvasId).getContext('2d'), config);
+  }
+
+  _selYears(f) {
+    return f.years ? [...f.years].sort((a, b) => a - b) : [...this.data.years].sort((a, b) => a - b);
+  }
+
+  setupBrandShareToggle() {
+    this.brandShareMode = 'share';
+    const group = document.getElementById('brand-share-mode');
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.mode === this.brandShareMode) return;
+        this.brandShareMode = btn.dataset.mode;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        this.renderBrandShare(this.getFilters());
+      });
+    });
+  }
+
+  renderBrandShare(f) {
+    const rows = this.filterMMF(f, { ignoreMaker: true });
+    const years = this._selYears(f);
+    const ym = {}, makerTotals = {}, yearTotals = {};
+    rows.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL) return;
+      if (!ym[r.y]) ym[r.y] = {};
+      ym[r.y][r.mk] = (ym[r.y][r.mk] || 0) + r.n;
+      makerTotals[r.mk] = (makerTotals[r.mk] || 0) + r.n;
+      yearTotals[r.y] = (yearTotals[r.y] || 0) + r.n;
+    });
+    const top = Object.entries(makerTotals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([m]) => m);
+    const topSet = new Set(top);
+    const share = this.brandShareMode === 'share';
+    const seriesNames = [...top, 'Others'];
+    const datasets = seriesNames.map((name, i) => {
+      const raw = years.map(y => {
+        const m = ym[y] || {};
+        if (name !== 'Others') return m[name] || 0;
+        return Object.entries(m).reduce((sum, [mk, n]) => sum + (topSet.has(mk) ? 0 : n), 0);
+      });
+      const color = name === 'Others' ? '#9ca3af' : COLORS[i % COLORS.length];
+      return {
+        label: name,
+        data: raw.map((v, j) => share ? (yearTotals[years[j]] ? v / yearTotals[years[j]] * 100 : 0) : v),
+        _raw: raw,
+        borderColor: color,
+        backgroundColor: color + (share ? 'B3' : 'B3'),
+        borderWidth: 1.5,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+      };
+    });
+    this._replaceChart('brandShare', 'chart-brand-share', {
+      type: 'line',
+      data: { labels: years.map(String), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: item => {
+                const raw = item.dataset._raw[item.dataIndex] || 0;
+                return share
+                  ? `${item.dataset.label}: ${item.parsed.y.toFixed(1)}% (${fmtFull(raw)})`
+                  : `${item.dataset.label}: ${fmtFull(raw)}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: {
+            stacked: true, beginAtZero: true, max: share ? 100 : undefined,
+            grid: { color: '#f1f3f5' },
+            ticks: { callback: v => share ? v + '%' : fmt(v) },
+          },
+        },
+      },
+    });
+  }
+
+  _shareTrendChart(name, canvasId, rows, dimKey, labelMap, colorFor, topN) {
+    const f = this.getFilters();
+    const years = this._selYears(f);
+    const grid = {}, totals = {}, yearTotals = {};
+    rows.forEach(r => {
+      const d = r[dimKey];
+      if (!grid[d]) grid[d] = {};
+      grid[d][r.y] = (grid[d][r.y] || 0) + r.n;
+      totals[d] = (totals[d] || 0) + r.n;
+      yearTotals[r.y] = (yearTotals[r.y] || 0) + r.n;
+    });
+    const top = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, topN).map(([d]) => d);
+    const datasets = top.map((d, i) => {
+      const raw = years.map(y => (grid[d] && grid[d][y]) || 0);
+      const color = colorFor(d, i);
+      return {
+        label: labelMap(d),
+        data: raw.map((v, j) => yearTotals[years[j]] ? v / yearTotals[years[j]] * 100 : 0),
+        _raw: raw,
+        borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, fill: false, tension: 0.3, pointRadius: 0, pointHoverRadius: 4,
+      };
+    });
+    this._replaceChart(name, canvasId, {
+      type: 'line',
+      data: { labels: years.map(String), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: item => `${item.dataset.label}: ${item.parsed.y.toFixed(1)}% (${fmtFull(item.dataset._raw[item.dataIndex] || 0)})`,
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => v + '%' } },
+        },
+      },
+    });
+  }
+
+  renderColourTrend(f) {
+    const rows = this.filterDim('by_colour_mf', f, 'c');
+    this._shareTrendChart('colourTrend', 'chart-colour-trend', rows, 'c',
+      c => c.charAt(0).toUpperCase() + c.slice(1),
+      (c, i) => COLOUR_HEX[c.toLowerCase()] || COLORS[i % COLORS.length], 8);
+  }
+
+  renderTypeTrend(f) {
+    const rows = this.filterDim('by_type_mf', f, 't');
+    this._shareTrendChart('typeTrend', 'chart-type-trend', rows, 't',
+      t => TYPE_DISPLAY[t] || t,
+      (t, i) => COLORS[i % COLORS.length], 6);
+  }
+
+  setupLeaderboard() {
+    const sel = document.getElementById('leader-year');
+    const years = [...this.data.years].sort((a, b) => b - a);
+    sel.insertAdjacentHTML('beforeend', '<option value="__all__">All years</option>');
+    years.forEach(y => sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`));
+    this.leaderYear = years[0];
+    sel.value = String(this.leaderYear);
+    sel.addEventListener('change', () => {
+      this.leaderYear = sel.value === '__all__' ? '__all__' : +sel.value;
+      this.renderLeaderboard(this.getFilters());
+    });
+  }
+
+  renderLeaderboard(f) {
+    const container = document.getElementById('table-leader');
+    const sub = document.getElementById('leader-sub');
+    const y = this.leaderYear;
+    const totals = {};
+    const source = f.months ? this.data.by_model_m : this.data.by_model;
+    source.forEach(r => {
+      if (y === '__all__') { if (f.years && !f.years.has(r.y)) return; }
+      else if (r.y !== y) return;
+      if (f.months && !f.months.has(r.m)) return;
+      if (f.makers && !f.makers.has(r.mk)) return;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return;
+      const k = r.mk + '||' + r.md;
+      totals[k] = (totals[k] || 0) + r.n;
+    });
+    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    const grand = sorted.reduce((sum, [, n]) => sum + n, 0);
+    const top = sorted.slice(0, 15);
+    if (sub) sub.textContent = `Top 15 models ${y === '__all__' ? 'across the selected years' : 'in ' + y}` + (f.months ? ` · ${this._monthLabel(f)}` : '') + ` · ${fmtFull(grand)} registrations in view · reflects maker & fuel filters`;
+    if (!top.length) {
+      container.innerHTML = '<div class="empty-state">No data for current filters</div>';
+      return;
+    }
+    const max = top[0][1];
+    let html = '<table class="data-table"><thead><tr><th>#</th><th>Maker</th><th>Model</th><th class="numeric">Registrations</th><th class="numeric">Share</th></tr></thead><tbody>';
+    top.forEach(([key, n], i) => {
+      const [mk, md] = key.split('||');
+      const badge = `<span class="rank-badge${i < 3 ? ' r' + (i + 1) : ''}">${i + 1}</span>`;
+      const barPct = max ? n / max * 100 : 0;
+      html += `<tr><td>${badge}</td><td>${this._mkCell(mk)}</td><td><strong>${md}</strong></td>` +
+        `<td class="numeric bar-cell"><div class="bar-fill" style="width:${barPct}%"></div><span>${fmtFull(n)}</span></td>` +
+        `<td class="numeric">${pct(n, grand)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  renderEVShare(f) {
+    const rows = this.filterMMF(f, { ignoreMaker: true, ignoreFuel: true });
+    const years = this._selYears(f);
+    const agg = {};
+    rows.forEach(r => {
+      if (!agg[r.y]) agg[r.y] = { total: 0, ev: 0, hybrid: 0, diesel: 0 };
+      const a = agg[r.y];
+      a.total += r.n;
+      if (r.fl === 'electric') a.ev += r.n;
+      else if (r.fl === 'hybrid_petrol' || r.fl === 'hybrid_diesel') a.hybrid += r.n;
+      else if (r.fl === 'diesel' || r.fl === 'greendiesel') a.diesel += r.n;
+    });
+    const series = [
+      ['Electric', 'ev', '#10b981'],
+      ['Hybrid', 'hybrid', '#f59e0b'],
+      ['Diesel', 'diesel', '#6b7280'],
+    ];
+    const datasets = series.map(([label, key, color]) => {
+      const raw = years.map(y => agg[y] ? agg[y][key] : 0);
+      return {
+        label,
+        data: raw.map((v, j) => {
+          const t = agg[years[j]] ? agg[years[j]].total : 0;
+          return t ? v / t * 100 : 0;
+        }),
+        _raw: raw,
+        borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, fill: false, tension: 0.3, pointRadius: 0, pointHoverRadius: 4,
+      };
+    });
+    this._replaceChart('evShare', 'chart-ev-share', {
+      type: 'line',
+      data: { labels: years.map(String), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: item => `${item.dataset.label}: ${item.parsed.y.toFixed(2)}% (${fmtFull(item.dataset._raw[item.dataIndex] || 0)})`,
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => v + '%' } },
+        },
+      },
+    });
+  }
+
+  renderEVBrand(f) {
+    const rows = this.filterMMF(f, { ignoreMaker: true, ignoreFuel: true }).filter(r => r.fl === 'electric');
+    const years = this._selYears(f);
+    const grid = {}, totals = {};
+    rows.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL) return;
+      if (!grid[r.mk]) grid[r.mk] = {};
+      grid[r.mk][r.y] = (grid[r.mk][r.y] || 0) + r.n;
+      totals[r.mk] = (totals[r.mk] || 0) + r.n;
+    });
+    const top = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([m]) => m);
+    const topSet = new Set(top);
+    const othersByYear = {};
+    Object.entries(grid).forEach(([mk, ys]) => {
+      if (topSet.has(mk)) return;
+      Object.entries(ys).forEach(([y, n]) => { othersByYear[y] = (othersByYear[y] || 0) + n; });
+    });
+    const datasets = top.map((mk, i) => ({
+      label: mk,
+      data: years.map(y => (grid[mk] && grid[mk][y]) || 0),
+      backgroundColor: COLORS[i % COLORS.length], borderWidth: 0, stack: 'ev',
+    }));
+    if (Object.keys(othersByYear).length) {
+      datasets.push({
+        label: 'Others',
+        data: years.map(y => othersByYear[y] || 0),
+        backgroundColor: '#9ca3af', borderWidth: 0, stack: 'ev',
+      });
+    }
+    this._replaceChart('evBrand', 'chart-ev-brand', {
+      type: 'bar',
+      data: { labels: years.map(String), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: item => `${item.dataset.label}: ${fmtFull(item.parsed.y)}`,
+              footer: items => {
+                const t = items.reduce((sum, it) => sum + (it.parsed.y || 0), 0);
+                return t ? `Total: ${fmtFull(t)}` : '';
+              },
+            },
+          },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: { stacked: true, beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } },
+        },
+      },
+    });
+  }
+
+  setupEVLeader() {
+    this.evLeaderMode = 'brands';
+    const group = document.getElementById('ev-leader-mode');
+    group.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.mode === this.evLeaderMode) return;
+        this.evLeaderMode = btn.dataset.mode;
+        group.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        this.renderEVLeader(this.getFilters());
+      });
+    });
+    const sel = document.getElementById('ev-year');
+    const years = [...this.data.years].sort((a, b) => b - a);
+    sel.insertAdjacentHTML('beforeend', '<option value="__all__">All years</option>');
+    years.forEach(y => sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`));
+    this.evYear = years[0];
+    sel.value = String(this.evYear);
+    sel.addEventListener('change', () => {
+      this.evYear = sel.value === '__all__' ? '__all__' : +sel.value;
+      this.renderEVLeader(this.getFilters());
+    });
+  }
+
+  renderEVLeader(f) {
+    const container = document.getElementById('table-ev-leader');
+    const sub = document.getElementById('ev-leader-sub');
+    const y = this.evYear;
+    const inYear = (ry) => y === '__all__' ? !(f.years && !f.years.has(ry)) : ry === y;
+    const totals = {};
+    if (this.evLeaderMode === 'brands') {
+      this.data.monthly_mf.forEach(r => {
+        if (r.fl !== 'electric' || !inYear(r.y) || r.mk === this.NO_MAKER_SENTINEL) return;
+        if (f.months && !f.months.has(r.m)) return;
+        totals[r.mk] = (totals[r.mk] || 0) + r.n;
+      });
+    } else {
+      this.data.by_model_ev.forEach(r => {
+        if (!inYear(r.y)) return;
+        totals[r.mk + '||' + r.md] = (totals[r.mk + '||' + r.md] || 0) + r.n;
+      });
+    }
+    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    const grand = sorted.reduce((sum, [, n]) => sum + n, 0);
+    const top = sorted.slice(0, 10);
+    const yLabel = y === '__all__' ? 'selected years' : y;
+    if (sub) sub.textContent = `Top ${top.length} EV ${this.evLeaderMode} · ${yLabel} · ${fmtFull(grand)} electric registrations` + (f.months && this.evLeaderMode === 'models' ? ' · month filter not applied to models' : (f.months ? ` · ${this._monthLabel(f)}` : ''));
+    if (!top.length) {
+      container.innerHTML = '<div class="empty-state">No electric registrations for this selection</div>';
+      return;
+    }
+    const max = top[0][1];
+    const isBrand = this.evLeaderMode === 'brands';
+    let html = `<table class="data-table"><thead><tr><th>#</th>${isBrand ? '<th>Brand</th>' : '<th>Maker</th><th>Model</th>'}<th class="numeric">Registrations</th><th class="numeric">Share of EVs</th></tr></thead><tbody>`;
+    top.forEach(([key, n], i) => {
+      const badge = `<span class="rank-badge${i < 3 ? ' r' + (i + 1) : ''}">${i + 1}</span>`;
+      const cells = isBrand ? `<td><strong>${this._mkCell(key)}</strong></td>`
+        : (() => { const [mk, md] = key.split('||'); return `<td>${this._mkCell(mk)}</td><td><strong>${md}</strong></td>`; })();
+      const barPct = max ? n / max * 100 : 0;
+      html += `<tr><td>${badge}</td>${cells}` +
+        `<td class="numeric bar-cell"><div class="bar-fill" style="width:${barPct}%"></div><span>${fmtFull(n)}</span></td>` +
+        `<td class="numeric">${pct(n, grand)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  _mkCell(mk) {
+    const esc = String(mk).replace(/"/g, '&quot;');
+    const active = (this.brandCmp || []).includes(mk) ? ' in-cmp' : '';
+    return `<span class="mk-link${active}" data-mk="${esc}" title="Click to add to the brand comparison">${mk}</span>`;
+  }
+
+  setupBrandCompare() {
+    this.brandCmp = [];
+
+    // Floating tray
+    const tray = document.createElement('div');
+    tray.id = 'brand-tray';
+    tray.hidden = true;
+    tray.innerHTML = '<span class="bt-label">Compare brands</span><span id="bt-chips" class="compare-chips"></span>' +
+      '<button type="button" class="bt-btn" id="bt-go">View comparison</button>' +
+      '<button type="button" class="bt-btn" id="bt-clear">Clear</button>';
+    document.body.appendChild(tray);
+    tray.querySelector('#bt-go').addEventListener('click', () => {
+      const sec = document.querySelector('[data-section-key="brand-compare"]');
+      if (!sec) return;
+      sec.classList.remove('collapsed');
+      requestAnimationFrame(() => {
+        Object.values(this.charts || {}).forEach(c => { if (c && c.resize) c.resize(); });
+        sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+    tray.querySelector('#bt-clear').addEventListener('click', () => {
+      this.brandCmp = [];
+      this._syncBrandCmpUI();
+    });
+
+    // Click any maker name anywhere (event delegation, survives re-renders)
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('.mk-link');
+      if (!el) return;
+      e.stopPropagation();
+      this._toggleBrandCmp(el.dataset.mk);
+    });
+
+    // Search box inside the section
+    const input = document.getElementById('brand-cmp-search');
+    const suggest = document.getElementById('brand-cmp-suggest');
+    const showSuggest = () => {
+      const q = input.value.trim().toLowerCase();
+      if (!q) { suggest.setAttribute('hidden', ''); return; }
+      const matches = this.allMakers
+        .filter(m => m.toLowerCase().includes(q) && !this.brandCmp.includes(m))
+        .slice(0, 20);
+      if (!matches.length) { suggest.innerHTML = '<div class="cs-item"><span>No matches</span></div>'; suggest.removeAttribute('hidden'); return; }
+      suggest.innerHTML = matches.map(m =>
+        `<div class="cs-item" data-mk="${m.replace(/"/g, '&quot;')}"><span>${m}</span><span class="cs-n">${fmt(this._makerTotals[m] || 0)}</span></div>`).join('');
+      suggest.removeAttribute('hidden');
+      suggest.querySelectorAll('.cs-item[data-mk]').forEach(el => {
+        el.addEventListener('click', () => {
+          input.value = '';
+          suggest.setAttribute('hidden', '');
+          this._toggleBrandCmp(el.dataset.mk, true);
+        });
+      });
+    };
+    input.addEventListener('input', showSuggest);
+    input.addEventListener('focus', showSuggest);
+    document.addEventListener('click', (e) => {
+      if (!suggest.contains(e.target) && e.target !== input) suggest.setAttribute('hidden', '');
+    });
+  }
+
+  _toggleBrandCmp(mk, addOnly = false) {
+    if (!mk) return;
+    const i = this.brandCmp.indexOf(mk);
+    if (i >= 0) {
+      if (addOnly) return;
+      this.brandCmp.splice(i, 1);
+    } else {
+      if (this.brandCmp.length >= 4) return;
+      this.brandCmp.push(mk);
+    }
+    this._syncBrandCmpUI();
+  }
+
+  _syncBrandCmpUI() {
+    // Highlight maker links everywhere
+    document.querySelectorAll('.mk-link').forEach(el => {
+      el.classList.toggle('in-cmp', this.brandCmp.includes(el.dataset.mk));
+    });
+    // Tray + section chips share the same chip markup
+    const chipHtml = this.brandCmp.map((mk, i) =>
+      `<span class="compare-chip" style="background:${COLORS[i % COLORS.length]}">${mk}` +
+      `<button type="button" data-mk="${mk.replace(/"/g, '&quot;')}" title="Remove">✕</button></span>`).join('');
+    [['bt-chips', true], ['brand-cmp-chips', false]].forEach(([id]) => {
+      const wrap = document.getElementById(id);
+      if (!wrap) return;
+      wrap.innerHTML = chipHtml;
+      wrap.querySelectorAll('button[data-mk]').forEach(b => {
+        b.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._toggleBrandCmp(b.dataset.mk);
+        });
+      });
+    });
+    const tray = document.getElementById('brand-tray');
+    if (tray) tray.hidden = !this.brandCmp.length;
+    this.renderBrandCompare(this.getFilters());
+  }
+
+  renderBrandCompare(f) {
+    const emptyEl = document.getElementById('brand-cmp-empty');
+    const wrapEl = document.getElementById('brand-cmp-wrap');
+    const statsRow = document.getElementById('brand-cmp-stats-row');
+    const sel = this.brandCmp || [];
+    if (!sel.length) {
+      emptyEl.style.display = '';
+      wrapEl.style.display = 'none';
+      statsRow.style.display = 'none';
+      if (this.charts.brandCmp) { this.charts.brandCmp.destroy(); this.charts.brandCmp = null; }
+      return;
+    }
+    emptyEl.style.display = 'none';
+    wrapEl.style.display = '';
+    statsRow.style.display = '';
+
+    const years = this._selYears(f);
+    const monthlyView = years.length === 1;
+    const rows = this.filterMMF(f, { ignoreMaker: true });
+    const selSet = new Set(sel);
+
+    // ---- Chart: one line per brand; monthly when a single year is selected ----
+    let labels, valueFor;
+    if (monthlyView) {
+      const y = years[0];
+      const lm = +(this.data.last_month_by_year[String(y)] || 12);
+      const months = Array.from({ length: lm }, (_, i) => i + 1);
+      labels = months.map(m => `${MONTH_LABELS[m - 1]} ${String(y).slice(2)}`);
+      const grid = {};
+      rows.forEach(r => {
+        if (!selSet.has(r.mk)) return;
+        if (!grid[r.mk]) grid[r.mk] = {};
+        grid[r.mk][r.m] = (grid[r.mk][r.m] || 0) + r.n;
+      });
+      valueFor = (mk) => months.map(m => (grid[mk] && grid[mk][m]) || 0);
+    } else {
+      labels = years.map(String);
+      const grid = {};
+      rows.forEach(r => {
+        if (!selSet.has(r.mk)) return;
+        if (!grid[r.mk]) grid[r.mk] = {};
+        grid[r.mk][r.y] = (grid[r.mk][r.y] || 0) + r.n;
+      });
+      valueFor = (mk) => years.map(y => (grid[mk] && grid[mk][y]) || 0);
+    }
+    const sub = document.getElementById('brand-cmp-sub');
+    if (sub) sub.textContent = (monthlyView ? `Monthly registrations in ${years[0]}` : 'Annual registrations') +
+      ' · reflects year & fuel filters · ignores maker filter';
+    const datasets = sel.map((mk, i) => {
+      const color = COLORS[i % COLORS.length];
+      return {
+        label: mk, data: valueFor(mk),
+        borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, fill: false, tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+      };
+    });
+    this._replaceChart('brandCmp', 'chart-brand-cmp', {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 12, boxWidth: 8, font: { size: 12 } } },
+          tooltip: { callbacks: { label: item => `${item.dataset.label}: ${fmtFull(item.parsed.y)}` } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } },
+        },
+      },
+    });
+
+    // ---- Side-by-side stats ----
+    const totals = {};            // fuel-aware totals per brand
+    let marketTotal = 0;
+    rows.forEach(r => {
+      if (r.mk !== this.NO_MAKER_SENTINEL) marketTotal += r.n;
+      if (selSet.has(r.mk)) totals[r.mk] = (totals[r.mk] || 0) + r.n;
+    });
+    const fuelAgg = {};           // fuel mix per brand, ignoring the fuel filter
+    this.filterMMF(f, { ignoreMaker: true, ignoreFuel: true }).forEach(r => {
+      if (!selSet.has(r.mk)) return;
+      if (!fuelAgg[r.mk]) fuelAgg[r.mk] = { total: 0, ev: 0, hybrid: 0 };
+      const a = fuelAgg[r.mk];
+      a.total += r.n;
+      if (r.fl === 'electric') a.ev += r.n;
+      else if (r.fl === 'hybrid_petrol' || r.fl === 'hybrid_diesel') a.hybrid += r.n;
+    });
+    const topModels = {};         // fuel-aware top 3 models per brand
+    (f.months ? this.data.by_model_m : this.data.by_model).forEach(r => {
+      if (!selSet.has(r.mk)) return;
+      if (f.years && !f.years.has(r.y)) return;
+      if (f.months && !f.months.has(r.m)) return;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return;
+      if (!topModels[r.mk]) topModels[r.mk] = {};
+      topModels[r.mk][r.md] = (topModels[r.mk][r.md] || 0) + r.n;
+    });
+
+    const metric = (label, cellFor) =>
+      `<tr><td><strong>${label}</strong></td>` + sel.map(mk => `<td class="numeric">${cellFor(mk)}</td>`).join('') + '</tr>';
+    let html = '<table class="data-table brand-stats-table"><thead><tr><th>Metric</th>' +
+      sel.map((mk, i) => `<th class="numeric"><span class="bs-brand-head" style="color:${COLORS[i % COLORS.length]}">${mk}</span></th>`).join('') +
+      '</tr></thead><tbody>';
+    html += metric('Registrations', mk => fmtFull(totals[mk] || 0));
+    html += metric('Market share', mk => pct(totals[mk] || 0, marketTotal));
+    html += metric('EV share of brand', mk => {
+      const a = fuelAgg[mk]; return a && a.total ? (a.ev / a.total * 100).toFixed(2) + '%' : '—';
+    });
+    html += metric('Hybrid share of brand', mk => {
+      const a = fuelAgg[mk]; return a && a.total ? (a.hybrid / a.total * 100).toFixed(2) + '%' : '—';
+    });
+    html += '<tr><td><strong>Top models</strong></td>' + sel.map(mk => {
+      const tm = Object.entries(topModels[mk] || {}).sort((a, b) => b[1] - a[1]).slice(0, 3);
+      if (!tm.length) return '<td class="numeric">—</td>';
+      return '<td class="numeric"><div class="bs-top-models">' +
+        tm.map(([md, n]) => `${md} · ${fmtFull(n)}`).join('<br>') + '</div></td>';
+    }).join('') + '</tr>';
+    html += '</tbody></table>';
+    document.getElementById('table-brand-cmp').innerHTML = html;
+  }
+
+  setupCompare() {
+    this.compareSel = [];
+    // Index the full untrimmed model registry
+    const idx = new Map();
+    this.data.by_model_all.forEach(r => {
+      const k = r.mk + '||' + r.md;
+      let e = idx.get(k);
+      if (!e) { e = { mk: r.mk, md: r.md, total: 0, years: {} }; idx.set(k, e); }
+      e.total += r.n;
+      e.years[r.y] = (e.years[r.y] || 0) + r.n;
+    });
+    this._cmpIndex = idx;
+    this._cmpList = [...idx.entries()]
+      .map(([k, e]) => ({ k, label: `${e.mk} ${e.md}`, lower: `${e.mk} ${e.md}`.toLowerCase(), total: e.total }))
+      .sort((a, b) => b.total - a.total);
+    const meta = document.getElementById('compare-meta');
+    if (meta) meta.textContent = `Search any of ${fmtFull(this._cmpList.length)} models ever registered · up to 5 at once`;
+
+    const input = document.getElementById('compare-search');
+    const suggest = document.getElementById('compare-suggest');
+    const showSuggest = () => {
+      const q = input.value.trim().toLowerCase();
+      if (!q) { suggest.setAttribute('hidden', ''); return; }
+      const matches = this._cmpList.filter(m => m.lower.includes(q) && !this.compareSel.includes(m.k)).slice(0, 20);
+      if (!matches.length) { suggest.innerHTML = '<div class="cs-item"><span>No matches</span></div>'; suggest.removeAttribute('hidden'); return; }
+      suggest.innerHTML = matches.map(m =>
+        `<div class="cs-item" data-k="${m.k.replace(/"/g, '&quot;')}"><span>${m.label}</span><span class="cs-n">${fmt(m.total)}</span></div>`).join('');
+      suggest.removeAttribute('hidden');
+      suggest.querySelectorAll('.cs-item[data-k]').forEach(el => {
+        el.addEventListener('click', () => {
+          if (this.compareSel.length >= 5) return;
+          this.compareSel.push(el.dataset.k);
+          input.value = '';
+          suggest.setAttribute('hidden', '');
+          this._renderCompareChips();
+          this.renderCompare(this.getFilters());
+        });
+      });
+    };
+    input.addEventListener('input', showSuggest);
+    input.addEventListener('focus', showSuggest);
+    document.addEventListener('click', (e) => {
+      if (!suggest.contains(e.target) && e.target !== input) suggest.setAttribute('hidden', '');
+    });
+    this._renderCompareChips();
+  }
+
+  _renderCompareChips() {
+    const wrap = document.getElementById('compare-chips');
+    wrap.innerHTML = this.compareSel.map((k, i) => {
+      const e = this._cmpIndex.get(k);
+      return `<span class="compare-chip" style="background:${COLORS[i % COLORS.length]}">${e ? e.mk + ' ' + e.md : k}` +
+        `<button type="button" data-k="${k.replace(/"/g, '&quot;')}" title="Remove">✕</button></span>`;
+    }).join('');
+    wrap.querySelectorAll('button[data-k]').forEach(b => {
+      b.addEventListener('click', () => {
+        this.compareSel = this.compareSel.filter(k => k !== b.dataset.k);
+        this._renderCompareChips();
+        this.renderCompare(this.getFilters());
+      });
+    });
+  }
+
+  renderCompare(f) {
+    const emptyEl = document.getElementById('compare-empty');
+    const wrapEl = document.getElementById('compare-canvas-wrap');
+    if (!this.compareSel.length) {
+      emptyEl.style.display = '';
+      wrapEl.style.display = 'none';
+      if (this.charts.compare) { this.charts.compare.destroy(); this.charts.compare = null; }
+      return;
+    }
+    emptyEl.style.display = 'none';
+    wrapEl.style.display = '';
+    const years = this._selYears(f);
+    const datasets = this.compareSel.map((k, i) => {
+      const e = this._cmpIndex.get(k);
+      const color = COLORS[i % COLORS.length];
+      return {
+        label: e ? `${e.mk} ${e.md}` : k,
+        data: years.map(y => (e && e.years[y]) || 0),
+        borderColor: color, backgroundColor: color + '22',
+        borderWidth: 2, fill: false, tension: 0.3, pointRadius: 2, pointHoverRadius: 5,
+      };
+    });
+    this._replaceChart('compare', 'chart-compare', {
+      type: 'line',
+      data: { labels: years.map(String), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 12, boxWidth: 8, font: { size: 12 } } },
+          tooltip: { callbacks: { label: item => `${item.dataset.label}: ${fmtFull(item.parsed.y)}` } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: { beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } },
+        },
+      },
+    });
+  }
+
+  renderState(f) {
+    const rows = this.filterDim('by_state_mf', f, 's', {
+      excludeValues: new Set(['Rakan Niaga'])
+    });
+    const totals = {};
+    rows.forEach(r => { totals[r.s] = (totals[r.s] || 0) + r.n; });
+    const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+    const labels = entries.map(([s]) => s);
+    const values = entries.map(([,n]) => n);
+
+    const ctx = document.getElementById('chart-state').getContext('2d');
+    if (this.charts.state) {
+      this.charts.state.data.labels = labels;
+      this.charts.state.data.datasets[0].data = values;
+      this.charts.state.update('none');
+      return;
+    }
+    this.charts.state = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Registrations',
+          data: values,
+          backgroundColor: COLORS[2] + 'CC',
+          borderColor: COLORS[2],
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${fmtFull(ctx.parsed.x)} registrations` } }
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  renderType(f) {
+    const rows = this.filterDim('by_type_mf', f, 't');
+    const totals = {};
+    rows.forEach(r => { totals[r.t] = (totals[r.t] || 0) + r.n; });
+    const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+    const labels = entries.map(([t]) => TYPE_DISPLAY[t] || t);
+    const values = entries.map(([,n]) => n);
+
+    const ctx = document.getElementById('chart-type').getContext('2d');
+    if (this.charts.type) {
+      this.charts.type.data.labels = labels;
+      this.charts.type.data.datasets[0].data = values;
+      this.charts.type.update('none');
+      return;
+    }
+    this.charts.type = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: COLORS,
+          borderColor: '#fff',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: { position: 'right', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                return `${ctx.label}: ${fmtFull(ctx.parsed)} (${pct(ctx.parsed, total)})`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  renderColour(f) {
+    const rows = this.filterDim('by_colour_mf', f, 'c');
+    const totals = {};
+    rows.forEach(r => { totals[r.c] = (totals[r.c] || 0) + r.n; });
+    const entries = Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0, 8);
+    const labels = entries.map(([c]) => c.charAt(0).toUpperCase() + c.slice(1));
+    const values = entries.map(([,n]) => n);
+    const colourMap = {
+      white: '#f3f4f6', grey: '#9ca3af', red: '#ef4444', silver: '#d1d5db',
+      black: '#1f2937', blue: '#3b82f6', brown: '#92400e', maroon: '#7f1d1d',
+      orange: '#f97316', green: '#10b981', yellow: '#eab308', purple: '#8b5cf6',
+      pink: '#ec4899', gold: '#d97706', beige: '#e7d9b4'
+    };
+    const bg = entries.map(([c]) => colourMap[c.toLowerCase()] || '#64748b');
+
+    const ctx = document.getElementById('chart-colour').getContext('2d');
+    if (this.charts.colour) {
+      this.charts.colour.data.labels = labels;
+      this.charts.colour.data.datasets[0].data = values;
+      this.charts.colour.data.datasets[0].backgroundColor = bg;
+      this.charts.colour.update('none');
+      return;
+    }
+    this.charts.colour = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Registrations',
+          data: values,
+          backgroundColor: bg,
+          borderColor: '#cbd5e1',
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${fmtFull(ctx.parsed.y)} registrations` } }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, grid: { color: '#f1f3f5' }, ticks: { callback: v => fmt(v) } }
+        }
+      }
+    });
+  }
+}
+
+__loadData();
+</script>
+</body>
+</html>
