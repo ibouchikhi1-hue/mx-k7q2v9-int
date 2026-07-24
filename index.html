@@ -724,18 +724,13 @@ body {
   background: var(--bg-primary); padding: 6px 0 4px; margin: 0 0 8px;
   border-bottom: 1px solid var(--border);
 }
-.tab-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-.tab-strip::-webkit-scrollbar { display: none; }
-.tab-strip button {
-  flex-shrink: 0; border: 1px solid var(--border); background: #fff;
-  color: var(--text-secondary); border-radius: 999px; padding: 6px 14px;
-  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+.tab-select-wrap { display: flex; align-items: center; gap: 8px; padding-bottom: 4px; }
+.tab-select {
+  padding: 7px 30px 7px 12px; border: 1px solid #0B1D51; border-radius: 6px;
+  background: #0B1D51; color: #fff; font-size: 13px; font-weight: 600;
+  cursor: pointer; min-width: 190px;
 }
-.tab-strip button:hover { color: var(--text-primary); }
-.tab-strip button.active {
-  background: #0B1D51; border-color: #0B1D51; color: #fff;
-  box-shadow: inset 0 -3px 0 #E32119;
-}
+.tab-select option { background: #fff; color: var(--text-primary); }
 .tab-context { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 3px; }
 .tab-chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .tab-chips .tc-label { font-size: 9px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.4px; margin: 0 2px 0 8px; }
@@ -744,8 +739,16 @@ body {
   border: 1px solid var(--border); background: #fff; color: var(--text-secondary);
   border-radius: 5px; padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer;
 }
-.tab-chips button:hover { color: var(--text-primary); }
-.tab-chips button.active { background: #1B3F91; border-color: #1B3F91; color: #fff; }
+/* Years family — EON blue */
+.tab-chips button[data-fy] { background: #EEF2F7; border-color: #C7D4EE; color: #1B3F91; }
+.tab-chips button[data-fy]:hover { background: #DDE6F5; }
+.tab-chips button[data-fy].active { background: #1B3F91; border-color: #1B3F91; color: #fff; }
+/* Fuel family — EON red */
+.tab-chips button[data-ff] { background: #FDECEA; border-color: #F3C1BC; color: #B91C1C; }
+.tab-chips button[data-ff]:hover { background: #FADBD7; }
+.tab-chips button[data-ff].active { background: #E32119; border-color: #E32119; color: #fff; }
+#tab-all-filters { background: #fff; border: 1px dashed #9CA3AF; color: var(--text-primary); }
+#tab-all-filters:hover { border-style: solid; }
 .tab-summary { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
 @media (max-width: 640px) { .tab-summary { display: none; } }
 
@@ -985,7 +988,10 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
   </div><!-- /.sticky-top -->
 
   <div class="tab-bar" id="tab-bar">
-    <div class="tab-strip" id="tab-strip"></div>
+    <div class="tab-select-wrap">
+      <span class="tc-label" style="margin:0">View</span>
+      <select id="tab-select" class="tab-select"></select>
+    </div>
     <div class="tab-context">
       <div class="tab-chips" id="tab-chips">
         <span class="tc-label">Years</span>
@@ -1814,11 +1820,10 @@ class Dashboard {
     defs.forEach(([id, label, keys]) => {
       if (keys) this._tabMap[id] = keys.filter(k => have.has(k));
     });
-    const strip = document.getElementById('tab-strip');
-    strip.innerHTML = defs.map(([id, label]) =>
-      `<button type="button" data-tab="${id}">${label}</button>`).join('');
-    strip.querySelectorAll('button').forEach(b =>
-      b.addEventListener('click', () => this.applyTab(b.dataset.tab, true)));
+    const sel = document.getElementById('tab-select');
+    sel.innerHTML = defs.map(([id, label]) =>
+      `<option value="${id}">${label}</option>`).join('');
+    sel.addEventListener('change', () => this.applyTab(sel.value, true));
 
     // keep tab bar pinned just below the sticky KPI band on desktop
     const setTop = () => {
@@ -1879,8 +1884,8 @@ class Dashboard {
     this.activeTab = id;
     try { localStorage.setItem('msia_dash_tab_v1', id); } catch (e) {}
     try { history.replaceState(null, '', '#tab=' + id); } catch (e) {}
-    document.querySelectorAll('#tab-strip button').forEach(b =>
-      b.classList.toggle('active', b.dataset.tab === id));
+    const tabSel = document.getElementById('tab-select');
+    if (tabSel && tabSel.value !== id) tabSel.value = id;
     const map = id === 'all' ? null : (this._tabMap[id] || []);
     document.querySelectorAll('.collapsible-section').forEach(sec => {
       const k = sec.dataset.sectionKey;
