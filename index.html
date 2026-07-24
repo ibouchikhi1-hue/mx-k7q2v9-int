@@ -714,6 +714,15 @@ body {
 .rail-check .rc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rail-check.unchecked .rc-label { color: var(--text-secondary); }
 @media (max-width: 900px) { #panel-rail { display: none; } }
+/* KPI fit: cards must shrink to fit ANY phone width (Fold cover 344px+) */
+@media (max-width: 640px) {
+  .sticky-top .kpi-row { gap: 4px; }
+  .sticky-top .kpi-card { min-width: 0; overflow: hidden; padding: 5px 5px; }
+  .sticky-top .kpi-value { font-size: 12px; }
+}
+body.is-mobile .sticky-top .kpi-row { gap: 4px; }
+body.is-mobile .sticky-top .kpi-card { min-width: 0; overflow: hidden; padding: 5px 5px; }
+body.is-mobile .sticky-top .kpi-value { font-size: 12px; }
 /* UA-detected mobile fallback (covers odd viewport reporting) */
 body.is-mobile .kpi-toggle {
   display: block; width: 100%; margin: 0 0 6px; padding: 5px 10px;
@@ -1504,8 +1513,13 @@ class Dashboard {
   }
 
   setupKpiToggle() {
-    if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      document.body.classList.add('is-mobile');
+    const isMobileUA = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobileUA) document.body.classList.add('is-mobile');
+    if (isMobileUA || window.matchMedia('(max-width: 640px)').matches) {
+      const shorts = ['Total reg.', 'Avg / month', 'Top maker', 'Top fuel'];
+      document.querySelectorAll('.sticky-top .kpi-card .kpi-label').forEach((el, i) => {
+        if (shorts[i]) { el.title = el.textContent; el.textContent = shorts[i]; }
+      });
     }
     const btn = document.getElementById('kpi-toggle');
     const row = document.querySelector('.sticky-top .kpi-row');
