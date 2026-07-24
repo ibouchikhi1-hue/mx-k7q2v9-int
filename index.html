@@ -714,6 +714,47 @@ body {
 .rail-check .rc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rail-check.unchecked .rc-label { color: var(--text-secondary); }
 @media (max-width: 900px) { #panel-rail { display: none; } }
+/* Mobile: compact header, drop-down filters, non-sticky band */
+.filters-toggle { display: none; }
+@media (max-width: 640px) {
+  .sticky-top { position: static; }
+  .dashboard-header { padding: 10px 14px; gap: 8px; }
+  .dashboard-header h1 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dashboard-header .subtitle { font-size: 9px; }
+  .dashboard-header #refresh-stamp { display: none; }
+  .dashboard-header img { height: 20px !important; }
+  .dashboard-header .title-group { min-width: 0; }
+  .dashboard-header .subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .filters-toggle {
+    display: block; width: 100%; padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,0.3); border-radius: 6px;
+    background: rgba(255,255,255,0.08); color: #fff;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .dashboard-header .filters { display: none; width: 100%; }
+  .dashboard-header .filters.open { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  .dashboard-header .filters .filter-group select,
+  .dashboard-header .filters .ms-button { width: 100%; min-width: 0; }
+}
+body.is-mobile .sticky-top { position: static; }
+body.is-mobile .dashboard-header { padding: 10px 14px; gap: 8px; }
+body.is-mobile .dashboard-header h1 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.is-mobile .dashboard-header .subtitle { font-size: 9px; }
+body.is-mobile .dashboard-header #refresh-stamp { display: none; }
+body.is-mobile .dashboard-header img { height: 20px !important; }
+body.is-mobile .dashboard-header .title-group { min-width: 0; }
+body.is-mobile .dashboard-header .subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.is-mobile .filters-toggle {
+  display: block; width: 100%; padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,0.3); border-radius: 6px;
+  background: rgba(255,255,255,0.08); color: #fff;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+}
+body.is-mobile .dashboard-header .filters { display: none; width: 100%; }
+body.is-mobile .dashboard-header .filters.open { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+body.is-mobile .dashboard-header .filters .filter-group select,
+body.is-mobile .dashboard-header .filters .ms-button { width: 100%; min-width: 0; }
+
 /* KPI fit: cards must shrink to fit ANY phone width (Fold cover 344px+) */
 @media (max-width: 640px) {
   .sticky-top .kpi-row { gap: 4px; }
@@ -782,6 +823,7 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
       <div class="subtitle" id="refresh-stamp" style="opacity:0.7;font-size:11px;margin-top:4px"></div>
     </div>
     </div>
+    <button type="button" class="filters-toggle" id="filters-toggle">Filters ▾</button>
     <div class="filters">
       <div class="filter-group">
         <label>Years</label>
@@ -1519,6 +1561,14 @@ class Dashboard {
       const shorts = ['Total reg.', 'Avg / month', 'Top maker', 'Top fuel'];
       document.querySelectorAll('.sticky-top .kpi-card .kpi-label').forEach((el, i) => {
         if (shorts[i]) { el.title = el.textContent; el.textContent = shorts[i]; }
+      });
+    }
+    const ft = document.getElementById('filters-toggle');
+    const filtersEl = document.querySelector('.dashboard-header .filters');
+    if (ft && filtersEl) {
+      ft.addEventListener('click', () => {
+        const open = filtersEl.classList.toggle('open');
+        ft.textContent = open ? 'Filters ▲' : 'Filters ▾';
       });
     }
     const btn = document.getElementById('kpi-toggle');
