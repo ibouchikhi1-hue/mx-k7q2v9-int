@@ -714,6 +714,37 @@ body {
 .rail-check .rc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rail-check.unchecked .rc-label { color: var(--text-secondary); }
 @media (max-width: 900px) { #panel-rail { display: none; } }
+/* Tab navigation bar with per-tab quick filters */
+.tab-bar {
+  position: sticky; top: var(--tabtop, 0px); z-index: 45;
+  background: var(--bg-primary); padding: 6px 0 4px; margin: 0 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+.tab-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.tab-strip::-webkit-scrollbar { display: none; }
+.tab-strip button {
+  flex-shrink: 0; border: 1px solid var(--border); background: #fff;
+  color: var(--text-secondary); border-radius: 999px; padding: 6px 14px;
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.tab-strip button:hover { color: var(--text-primary); }
+.tab-strip button.active {
+  background: #0B1D51; border-color: #0B1D51; color: #fff;
+  box-shadow: inset 0 -3px 0 #E32119;
+}
+.tab-context { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 3px; }
+.tab-chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.tab-chips .tc-label { font-size: 9px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.4px; margin: 0 2px 0 8px; }
+.tab-chips .tc-label:first-child { margin-left: 0; }
+.tab-chips button {
+  border: 1px solid var(--border); background: #fff; color: var(--text-secondary);
+  border-radius: 5px; padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.tab-chips button:hover { color: var(--text-primary); }
+.tab-chips button.active { background: #1B3F91; border-color: #1B3F91; color: #fff; }
+.tab-summary { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+@media (max-width: 640px) { .tab-summary { display: none; } }
+
 /* Floating filters button + slide-down filter sheet (mobile) */
 .filters-fab { display: none; }
 @media (max-width: 640px) {
@@ -946,6 +977,26 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
     </div>
   </section>
   </div><!-- /.sticky-top -->
+
+  <div class="tab-bar" id="tab-bar">
+    <div class="tab-strip" id="tab-strip"></div>
+    <div class="tab-context">
+      <div class="tab-chips" id="tab-chips">
+        <span class="tc-label">Years</span>
+        <button type="button" data-fy="all">All</button>
+        <button type="button" data-fy="last10">Last 10</button>
+        <button type="button" data-fy="last5">Last 5</button>
+        <button type="button" data-fy="ytd">This yr</button>
+        <span class="tc-label">Fuel</span>
+        <button type="button" data-ff="__all__">All</button>
+        <button type="button" data-ff="petrol">Petrol</button>
+        <button type="button" data-ff="electric">EV</button>
+        <button type="button" data-ff="hybrid_petrol">Hybrid</button>
+        <button type="button" id="tab-all-filters">⛭ All filters</button>
+      </div>
+      <div class="tab-summary" id="tab-filter-summary"></div>
+    </div>
+  </div>
 
   <button type="button" class="filters-fab" id="filters-fab">⛭ Filters</button>
   <div class="collapse-controls">
@@ -1539,6 +1590,7 @@ class Dashboard {
     this.setupCollapsibles();
     this.setupPanelHiding();
     this.setupKpiToggle();
+    this.setupTabs();
     this.setupStickyShadow();
   }
 
@@ -1734,6 +1786,139 @@ class Dashboard {
       apply();
     });
     apply();
+  }
+
+  setupTabs() {
+    const sections = [...document.querySelectorAll('.collapsible-section')];
+    const originSec = sections.find(sec => /brand origin/i.test((sec.querySelector('.section-title') || {}).textContent || ''));
+    const originKey = originSec ? originSec.dataset.sectionKey : null;
+    const defs = [
+      ['all', 'All', null],
+      ['overview', 'Overview', ['whole-market', 'insights-focus', 'insights-nonfocus']],
+      ['trends', 'Trend & volume', ['trend-volume']],
+      ['structure', 'Structure', ['market-structure', 'long-trends']],
+      originKey ? ['origin', 'Brand origin', [originKey]] : null,
+      ['leaders', 'Leaderboards', ['leaderboards', 'model-leaderboard']],
+      ['ev', 'EV', ['ev-adoption']],
+      ['compare', 'Compare', ['model-compare', 'brand-compare']],
+      ['breakdown', 'Breakdown', ['breakdown']],
+    ].filter(Boolean);
+    const have = new Set(sections.map(sec => sec.dataset.sectionKey));
+    this._tabMap = {};
+    defs.forEach(([id, label, keys]) => {
+      if (keys) this._tabMap[id] = keys.filter(k => have.has(k));
+    });
+    const strip = document.getElementById('tab-strip');
+    strip.innerHTML = defs.map(([id, label]) =>
+      `<button type="button" data-tab="${id}">${label}</button>`).join('');
+    strip.querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => this.applyTab(b.dataset.tab, true)));
+
+    // keep tab bar pinned just below the sticky KPI band on desktop
+    const setTop = () => {
+      const st = document.querySelector('.sticky-top');
+      const fixed = st && getComputedStyle(st).position !== 'static';
+      document.documentElement.style.setProperty('--tabtop', fixed ? (st.offsetHeight - 4) + 'px' : '0px');
+    };
+    window.addEventListener('resize', setTop);
+    setTop();
+
+    // quick-filter chips drive the GLOBAL filters — every chart stays in sync
+    document.querySelectorAll('#tab-chips button[data-fy]').forEach(b => {
+      b.addEventListener('click', () => {
+        const years = [...this.data.years].sort((x, y) => x - y);
+        const latest = years[years.length - 1];
+        let sel = [];
+        if (b.dataset.fy === 'last5') sel = years.filter(y => y >= latest - 4);
+        else if (b.dataset.fy === 'last10') sel = years.filter(y => y >= latest - 9);
+        else if (b.dataset.fy === 'ytd') sel = [latest];
+        this.selectedYears = new Set(sel);
+        this._renderYearOptions();
+        this._updateYearButtonLabel();
+        this.render();
+      });
+    });
+    document.querySelectorAll('#tab-chips button[data-ff]').forEach(b => {
+      b.addEventListener('click', () => {
+        document.getElementById('filter-fuel').value = b.dataset.ff;
+        this.render();
+      });
+    });
+    document.getElementById('tab-all-filters').addEventListener('click', () => {
+      const filtersEl = document.querySelector('.dashboard-header .filters');
+      const mobile = document.body.classList.contains('is-mobile') || window.matchMedia('(max-width: 640px)').matches;
+      if (mobile && filtersEl) {
+        filtersEl.classList.add('open', 'sheet');
+        const fab = document.getElementById('filters-fab');
+        if (fab) fab.textContent = '✕ Close';
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+
+    // initial tab: URL hash beats saved preference
+    let initial = 'all';
+    const m = location.hash.match(/tab=([a-z]+)/);
+    if (m && (m[1] === 'all' || this._tabMap[m[1]])) initial = m[1];
+    else {
+      try {
+        const saved = localStorage.getItem('msia_dash_tab_v1');
+        if (saved && (saved === 'all' || this._tabMap[saved])) initial = saved;
+      } catch (e) {}
+    }
+    this.applyTab(initial, false);
+  }
+
+  applyTab(id, user) {
+    this.activeTab = id;
+    try { localStorage.setItem('msia_dash_tab_v1', id); } catch (e) {}
+    try { history.replaceState(null, '', '#tab=' + id); } catch (e) {}
+    document.querySelectorAll('#tab-strip button').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === id));
+    const map = id === 'all' ? null : (this._tabMap[id] || []);
+    document.querySelectorAll('.collapsible-section').forEach(sec => {
+      const k = sec.dataset.sectionKey;
+      sec.style.display = (!map || map.includes(k)) ? '' : 'none';
+    });
+    // whole-market stays hidden when it has no data
+    if (!(this.data.by_category_m || []).length) {
+      const wm = document.querySelector('[data-section-key="whole-market"]');
+      if (wm) wm.style.display = 'none';
+    }
+    window.dispatchEvent(new Event('resize'));
+    requestAnimationFrame(() => {
+      Object.values(this.charts || {}).forEach(c => { if (c && c.resize) c.resize(); });
+    });
+    if (user) {
+      const bar = document.getElementById('tab-bar');
+      if (bar) window.scrollTo({ top: Math.max(0, bar.offsetTop - 120), behavior: 'smooth' });
+    }
+  }
+
+  _updateTabContext(f) {
+    // chip active states reflect the live global filters
+    const years = [...this.data.years].sort((x, y) => x - y);
+    const latest = years[years.length - 1];
+    const cur = this.selectedYears;
+    const eq = (arr) => cur.size === arr.length && arr.every(y => cur.has(y));
+    const fyActive =
+      (cur.size === 0 || cur.size === years.length) ? 'all'
+      : eq(years.filter(y => y >= latest - 4)) ? 'last5'
+      : eq(years.filter(y => y >= latest - 9)) ? 'last10'
+      : eq([latest]) ? 'ytd' : null;
+    document.querySelectorAll('#tab-chips button[data-fy]').forEach(b =>
+      b.classList.toggle('active', b.dataset.fy === fyActive));
+    const fuel = document.getElementById('filter-fuel').value;
+    document.querySelectorAll('#tab-chips button[data-ff]').forEach(b =>
+      b.classList.toggle('active', b.dataset.ff === fuel));
+    const sum = document.getElementById('tab-filter-summary');
+    if (sum) {
+      const bits = [this._yearLabel(f)];
+      if (f.months) bits.push(this._monthLabel(f));
+      bits.push(fuel === '__all__' ? 'all fuels' : (FUEL_DISPLAY[fuel] || fuel));
+      bits.push(f.makers ? `${f.makers.size} maker${f.makers.size === 1 ? '' : 's'}` : 'all makers');
+      sum.textContent = 'Active: ' + bits.join(' · ');
+    }
   }
 
   setupStickyShadow() {
@@ -2720,6 +2905,7 @@ class Dashboard {
     this.renderMakerLB(f);
     this.renderStateLB(f);
     this._annualOnlyNotes(f);
+    this._updateTabContext(f);
   }
 
   // Some views are built from annual aggregates and cannot honour the
