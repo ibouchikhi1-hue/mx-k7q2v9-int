@@ -714,6 +714,46 @@ body {
 .rail-check .rc-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rail-check.unchecked .rc-label { color: var(--text-secondary); }
 @media (max-width: 900px) { #panel-rail { display: none; } }
+/* Floating filters button + slide-down filter sheet (mobile) */
+.filters-fab { display: none; }
+@media (max-width: 640px) {
+  .filters-fab {
+    display: flex; align-items: center; gap: 6px;
+    position: fixed; bottom: 14px; right: 12px; z-index: 95;
+    background: #E32119; color: #fff; border: none; border-radius: 999px;
+    padding: 10px 16px; font-size: 13px; font-weight: 700;
+    box-shadow: 0 6px 18px rgba(15,23,42,0.35); cursor: pointer;
+  }
+  .dashboard-header .filters.sheet.open {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 90;
+    background: linear-gradient(135deg, #0B1D51 0%, #16307A 100%);
+    padding: 16px 16px 20px; margin: 0; max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45); border-radius: 0 0 12px 12px;
+  }
+}
+body.is-mobile .filters-fab {
+  display: flex; align-items: center; gap: 6px;
+  position: fixed; bottom: 14px; right: 12px; z-index: 95;
+  background: #E32119; color: #fff; border: none; border-radius: 999px;
+  padding: 10px 16px; font-size: 13px; font-weight: 700;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.35); cursor: pointer;
+}
+body.is-mobile .dashboard-header .filters.sheet.open {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 90;
+  background: linear-gradient(135deg, #0B1D51 0%, #16307A 100%);
+  padding: 16px 16px 20px; margin: 0; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45); border-radius: 0 0 12px 12px;
+}
+.lb-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+.btn-csv {
+  border: 1px solid var(--border); background: #fff; color: var(--text-secondary);
+  border-radius: 5px; font-size: 11px; font-weight: 600; padding: 4px 9px; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.btn-csv:hover { color: var(--text-primary); background: #f3f4f6; }
+.rank-up { color: #10b981; font-weight: 700; }
+.rank-down { color: #E32119; font-weight: 700; }
+
 /* Mobile: compact header, drop-down filters, non-sticky band */
 .filters-toggle { display: none; }
 @media (max-width: 640px) {
@@ -907,6 +947,7 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
   </section>
   </div><!-- /.sticky-top -->
 
+  <button type="button" class="filters-fab" id="filters-fab">⛭ Filters</button>
   <div class="collapse-controls">
     <button type="button" id="btn-expand-all">Expand all</button>
     <button type="button" id="btn-collapse-all">Collapse all</button>
@@ -1137,6 +1178,95 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
     </div>
   </section>
 
+  <section class="collapsible-section" data-section-key="market-structure">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Market structure</div>
+      <div class="insights-meta">National (Perodua + Proton) vs the rest · monthly brand pivot</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-full">
+        <div class="chart-container">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>National vs Non-National</h3>
+              <div class="chart-sub">Perodua + Proton vs all other brands · reflects year & fuel filters</div>
+            </div>
+            <div class="toggle-group" id="nat-mode">
+              <button type="button" data-mode="share" class="active">Share %</button>
+              <button type="button" data-mode="volume">Volume</button>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-natvsnon"></canvas></div>
+        </div>
+      </section>
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>Monthly registrations by brand</h3>
+              <div class="chart-sub" id="bm-sub">Top 15 brands · month by month</div>
+            </div>
+            <div class="lb-controls">
+              <select id="bm-year" class="card-select"></select>
+              <button type="button" class="btn-csv" id="bm-csv">Download CSV</button>
+            </div>
+          </div>
+          <div id="table-brand-monthly" class="models-scroll"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="collapsible-section" data-section-key="leaderboards">
+    <div class="collapsible-header">
+      <div class="section-title"><span class="chevron">▾</span>Leaderboards & movers</div>
+      <div class="insights-meta">Growth and rank change vs a comparison year · partial years compared on matching months</div>
+    </div>
+    <div class="collapsible-body">
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>All makers — leaderboard</h3>
+              <div class="chart-sub" id="mk-lb-sub">Top 20 makers</div>
+            </div>
+            <div class="lb-controls">
+              <select id="mk-lb-year" class="card-select"></select>
+              <span style="font-size:11px;color:var(--text-secondary)">vs</span>
+              <select id="mk-lb-prev" class="card-select"></select>
+              <div class="toggle-group" id="mk-lb-rank">
+                <button type="button" data-mode="volume" class="active">Volume</button>
+                <button type="button" data-mode="growth">Growth</button>
+              </div>
+              <button type="button" class="btn-csv" id="mk-lb-csv">CSV</button>
+            </div>
+          </div>
+          <div id="table-mk-lb"></div>
+        </div>
+      </section>
+      <section class="chart-row row-full">
+        <div class="table-section">
+          <div class="chart-header-row">
+            <div class="chart-titles">
+              <h3>State leaderboard & rank change</h3>
+              <div class="chart-sub" id="st-lb-sub">Registration-office states · Rakan Niaga (partner portal channel) excluded</div>
+            </div>
+            <div class="lb-controls">
+              <select id="st-lb-year" class="card-select"></select>
+              <span style="font-size:11px;color:var(--text-secondary)">vs</span>
+              <select id="st-lb-prev" class="card-select"></select>
+              <div class="toggle-group" id="st-lb-rank">
+                <button type="button" data-mode="volume" class="active">Volume</button>
+                <button type="button" data-mode="growth">Growth</button>
+              </div>
+            </div>
+          </div>
+          <div id="table-st-lb"></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
   <section class="collapsible-section" data-section-key="model-leaderboard">
     <div class="collapsible-header">
       <div class="section-title"><span class="chevron">▾</span>Model leaderboard by year</div>
@@ -1277,7 +1407,7 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
   </section>
 
   <footer class="dashboard-footer">
-    EON Strategic Planning &amp; Business Development · Source: JPJ / Malaysia open car registration data · 2000-2026
+    EON Strategic Planning &amp; Business Development · Source: Road Transport Department (JPJ) via data.gov.my, CC BY 4.0 · 2000–2026<br><span style="font-size:11px">Notes: “Rakan Niaga” is JPJ’s partner-portal channel, not a state · “National” = Perodua + Proton · when a partial year (e.g. 2026 YTD) is compared to a prior year, both are restricted to the same months.</span>
   </footer>
 </div>
 
@@ -1388,6 +1518,7 @@ class Dashboard {
     this.setupEVLeader();
     this.setupCompare();
     this.setupBrandCompare();
+    this.setupMarketStructure();
     this.renderInsights();
     // Stamp the last-refresh timestamp so cache issues are obvious
     const stamp = document.getElementById('refresh-stamp');
@@ -1567,8 +1698,24 @@ class Dashboard {
     const filtersEl = document.querySelector('.dashboard-header .filters');
     if (ft && filtersEl) {
       ft.addEventListener('click', () => {
+        filtersEl.classList.remove('sheet');
         const open = filtersEl.classList.toggle('open');
         ft.textContent = open ? 'Filters ▲' : 'Filters ▾';
+      });
+    }
+    // Floating filters button: opens the filter panel as a fixed sheet from
+    // anywhere on the page (mobile only)
+    const fab = document.getElementById('filters-fab');
+    if (fab && filtersEl) {
+      fab.addEventListener('click', () => {
+        const isOpen = filtersEl.classList.contains('open') && filtersEl.classList.contains('sheet');
+        if (isOpen) {
+          filtersEl.classList.remove('open', 'sheet');
+          fab.textContent = '⛭ Filters';
+        } else {
+          filtersEl.classList.add('open', 'sheet');
+          fab.textContent = '✕ Close';
+        }
       });
     }
     const btn = document.getElementById('kpi-toggle');
@@ -2568,6 +2715,10 @@ class Dashboard {
     this.renderEVLeader(f);
     this.renderCompare(f);
     this.renderBrandCompare(f);
+    this.renderNatVsNon(f);
+    this.renderBrandMonthly(f);
+    this.renderMakerLB(f);
+    this.renderStateLB(f);
     this._annualOnlyNotes(f);
   }
 
@@ -3580,9 +3731,11 @@ class Dashboard {
       else if (r.fl === 'hybrid_petrol' || r.fl === 'hybrid_diesel') a.hybrid += r.n;
       else if (r.fl === 'diesel' || r.fl === 'greendiesel') a.diesel += r.n;
     });
+    Object.values(agg).forEach(a => { a.elect = a.ev + a.hybrid; });
     const series = [
       ['Electric', 'ev', '#10b981'],
       ['Hybrid', 'hybrid', '#f59e0b'],
+      ['Electrified (BEV+HEV)', 'elect', '#0B1D51'],
       ['Diesel', 'diesel', '#6b7280'],
     ];
     const datasets = series.map(([label, key, color]) => {
@@ -3595,7 +3748,8 @@ class Dashboard {
         }),
         _raw: raw,
         borderColor: color, backgroundColor: color + '22',
-        borderWidth: 2, fill: false, tension: 0.3, pointRadius: 0, pointHoverRadius: 4,
+        borderWidth: 2, borderDash: key === 'elect' ? [6, 3] : undefined,
+        fill: false, tension: 0.3, pointRadius: 0, pointHoverRadius: 4,
       };
     });
     this._replaceChart('evShare', 'chart-ev-share', {
@@ -4069,6 +4223,242 @@ class Dashboard {
         },
       },
     });
+  }
+
+  setupMarketStructure() {
+    this.natMode = 'share';
+    const natGroup = document.getElementById('nat-mode');
+    natGroup.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.mode === this.natMode) return;
+        this.natMode = btn.dataset.mode;
+        natGroup.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        this.renderNatVsNon(this.getFilters());
+      });
+    });
+    const years = [...this.data.years].sort((a, b) => b - a);
+    const fill = (sel, defIdx) => {
+      years.forEach(y => sel.insertAdjacentHTML('beforeend', `<option value="${y}">${y}</option>`));
+      sel.value = String(years[defIdx]);
+    };
+    fill(document.getElementById('bm-year'), 0);
+    fill(document.getElementById('mk-lb-year'), 0);
+    fill(document.getElementById('mk-lb-prev'), 1);
+    fill(document.getElementById('st-lb-year'), 0);
+    fill(document.getElementById('st-lb-prev'), 1);
+    this.bmYear = years[0];
+    this.mkLbYear = years[0]; this.mkLbPrev = years[1];
+    this.stLbYear = years[0]; this.stLbPrev = years[1];
+    this.mkLbRank = 'volume'; this.stLbRank = 'volume';
+    const wire = (id, prop, fn) => {
+      document.getElementById(id).addEventListener('change', (e) => {
+        this[prop] = +e.target.value; fn();
+      });
+    };
+    wire('bm-year', 'bmYear', () => this.renderBrandMonthly(this.getFilters()));
+    wire('mk-lb-year', 'mkLbYear', () => this.renderMakerLB(this.getFilters()));
+    wire('mk-lb-prev', 'mkLbPrev', () => this.renderMakerLB(this.getFilters()));
+    wire('st-lb-year', 'stLbYear', () => this.renderStateLB(this.getFilters()));
+    wire('st-lb-prev', 'stLbPrev', () => this.renderStateLB(this.getFilters()));
+    const wireRank = (id, prop, fn) => {
+      const g = document.getElementById(id);
+      g.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.mode === this[prop]) return;
+          this[prop] = btn.dataset.mode;
+          g.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+          fn();
+        });
+      });
+    };
+    wireRank('mk-lb-rank', 'mkLbRank', () => this.renderMakerLB(this.getFilters()));
+    wireRank('st-lb-rank', 'stLbRank', () => this.renderStateLB(this.getFilters()));
+    document.getElementById('bm-csv').addEventListener('click', () => {
+      if (this._bmCsv) this._downloadCSV(`brand_monthly_${this.bmYear}.csv`, this._bmCsv);
+    });
+    document.getElementById('mk-lb-csv').addEventListener('click', () => {
+      if (this._mkLbCsv) this._downloadCSV(`makers_leaderboard_${this.mkLbYear}.csv`, this._mkLbCsv);
+    });
+  }
+
+  _downloadCSV(name, rows) {
+    const csv = rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = name;
+    a.click();
+  }
+
+  renderNatVsNon(f) {
+    const rows = this.filterMMF(f, { ignoreMaker: true });
+    const years = this._selYears(f);
+    const NAT = new Set(['Perodua', 'Proton']);
+    const nat = {}, oth = {};
+    rows.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL) return;
+      const t = NAT.has(r.mk) ? nat : oth;
+      t[r.y] = (t[r.y] || 0) + r.n;
+    });
+    const share = this.natMode === 'share';
+    const mk = (label, obj, color) => {
+      const raw = years.map(y => obj[y] || 0);
+      return {
+        label, _raw: raw,
+        data: raw.map((v, j) => {
+          const tot = (nat[years[j]] || 0) + (oth[years[j]] || 0);
+          return share ? (tot ? v / tot * 100 : 0) : v;
+        }),
+        borderColor: color, backgroundColor: color + 'B3',
+        borderWidth: 1.5, fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4,
+      };
+    };
+    this._replaceChart('natvsnon', 'chart-natvsnon', {
+      type: 'line',
+      data: { labels: years.map(String), datasets: [mk('National (Perodua + Proton)', nat, '#1B3F91'), mk('Non-national', oth, '#E32119')] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { usePointStyle: true, padding: 10, boxWidth: 8, font: { size: 11 } } },
+          tooltip: { callbacks: { label: item =>
+            `${item.dataset.label}: ${share ? item.parsed.y.toFixed(1) + '%' : fmtFull(item.parsed.y)} (${fmtFull(item.dataset._raw[item.dataIndex] || 0)})` } },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { autoSkip: true, maxTicksLimit: 14 } },
+          y: { stacked: true, beginAtZero: true, max: share ? 100 : undefined,
+               grid: { color: '#f1f3f5' }, ticks: { callback: v => share ? v + '%' : fmt(v) } },
+        },
+      },
+    });
+  }
+
+  renderBrandMonthly(f) {
+    const y = this.bmYear;
+    const lm = +(this.data.last_month_by_year[String(y)] || 12);
+    const grid = {}, totals = {};
+    this.data.monthly_mf.forEach(r => {
+      if (r.y !== y || r.mk === this.NO_MAKER_SENTINEL) return;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return;
+      if (!grid[r.mk]) grid[r.mk] = {};
+      grid[r.mk][r.m] = (grid[r.mk][r.m] || 0) + r.n;
+      totals[r.mk] = (totals[r.mk] || 0) + r.n;
+    });
+    const top = Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 15);
+    const sub = document.getElementById('bm-sub');
+    if (sub) sub.textContent = `Top 15 brands in ${y}${lm < 12 ? ` (Jan–${MONTH_LABELS[lm-1]} YTD)` : ''} · reflects fuel filter`;
+    const el = document.getElementById('table-brand-monthly');
+    if (!top.length) { el.innerHTML = '<div class="empty-state">No data</div>'; this._bmCsv = null; return; }
+    const months = Array.from({ length: lm }, (_, i) => i + 1);
+    let html = '<table class="data-table data-table-compact single-maker"><thead><tr><th>#</th><th>Brand</th>';
+    months.forEach(m => html += `<th class="numeric">${MONTH_LABELS[m-1]}</th>`);
+    html += '<th class="numeric">Total</th></tr></thead><tbody>';
+    const csv = [['Brand', ...months.map(m => MONTH_LABELS[m-1]), 'Total']];
+    top.forEach(([mk2, tot], i) => {
+      html += `<tr><td>${i+1}</td><td>${this._mkCell(mk2)}</td>`;
+      const line = [mk2];
+      months.forEach(m => {
+        const v = (grid[mk2] && grid[mk2][m]) || 0;
+        html += `<td class="numeric">${v ? fmtFull(v) : '<span class="muted">—</span>'}</td>`;
+        line.push(v);
+      });
+      html += `<td class="numeric"><strong>${fmtFull(tot)}</strong></td></tr>`;
+      line.push(tot);
+      csv.push(line);
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+    this._bmCsv = csv;
+  }
+
+  _lbTable(el, rows, labelHdr, grand, opts) {
+    // rows: [{name, origin?, cur, prev, growth, dRank}]
+    let html = `<table class="data-table"><thead><tr><th>#</th><th>${labelHdr}</th>`;
+    if (opts.origin) html += '<th>Origin</th>';
+    html += '<th class="numeric">Current</th><th class="numeric">Share</th><th class="numeric">Previous</th><th class="numeric">Growth</th><th class="numeric">Rank Δ</th></tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const badge = `<span class="rank-badge${i < 3 ? ' r' + (i+1) : ''}">${i+1}</span>`;
+      const g = r.growth == null ? '—' : `${r.growth >= 0 ? '+' : ''}${(r.growth * 100).toFixed(1)}%`;
+      const gCls = r.growth == null ? '' : (r.growth >= 0.02 ? 'rank-up' : (r.growth <= -0.02 ? 'rank-down' : ''));
+      const d = r.dRank == null ? '—'
+        : r.dRank > 0 ? `<span class="rank-up">▲ ${r.dRank}</span>`
+        : r.dRank < 0 ? `<span class="rank-down">▼ ${-r.dRank}</span>` : '→';
+      html += `<tr><td>${badge}</td><td>${opts.mkLink ? this._mkCell(r.name) : r.name}</td>`;
+      if (opts.origin) html += `<td>${r.origin || '—'}</td>`;
+      html += `<td class="numeric"><strong>${fmtFull(r.cur)}</strong></td>` +
+        `<td class="numeric">${pct(r.cur, grand)}</td>` +
+        `<td class="numeric">${fmtFull(r.prev)}</td>` +
+        `<td class="numeric ${gCls}">${g}</td><td class="numeric">${d}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+  }
+
+  renderMakerLB(f) {
+    const y = this.mkLbYear, py = this.mkLbPrev;
+    const lm = Math.min(+(this.data.last_month_by_year[String(y)] || 12), +(this.data.last_month_by_year[String(py)] || 12));
+    const cur = {}, prev = {};
+    this.data.monthly_mf.forEach(r => {
+      if (r.mk === this.NO_MAKER_SENTINEL || r.m > lm) return;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return;
+      if (r.y === y) cur[r.mk] = (cur[r.mk] || 0) + r.n;
+      else if (r.y === py) prev[r.mk] = (prev[r.mk] || 0) + r.n;
+    });
+    const rankOf = (obj) => {
+      const m = new Map();
+      Object.entries(obj).sort((a, b) => b[1] - a[1]).forEach(([k], i) => m.set(k, i + 1));
+      return m;
+    };
+    const rc = rankOf(cur), rp = rankOf(prev);
+    const grand = Object.values(cur).reduce((a, b) => a + b, 0);
+    const origins = this.data.maker_origins || {};
+    let rows = Object.entries(cur).map(([mk2, v]) => ({
+      name: mk2, origin: origins[mk2], cur: v, prev: prev[mk2] || 0,
+      growth: prev[mk2] ? (v - prev[mk2]) / prev[mk2] : null,
+      dRank: rp.has(mk2) ? rp.get(mk2) - rc.get(mk2) : null,
+    }));
+    rows.sort(this.mkLbRank === 'growth'
+      ? (a, b) => (b.growth ?? -Infinity) - (a.growth ?? -Infinity)
+      : (a, b) => b.cur - a.cur);
+    rows = rows.slice(0, 20);
+    const sub = document.getElementById('mk-lb-sub');
+    if (sub) sub.textContent = `Top 20 makers · ${y} vs ${py}${lm < 12 ? ` · both restricted to Jan–${MONTH_LABELS[lm-1]} (pro-rated)` : ''} · reflects fuel filter`;
+    this._lbTable(document.getElementById('table-mk-lb'), rows, 'Maker', grand, { origin: true, mkLink: true });
+    this._mkLbCsv = [['Maker', 'Origin', String(y), 'Share', String(py), 'Growth', 'RankChange'],
+      ...rows.map(r => [r.name, r.origin || '', r.cur, grand ? (r.cur / grand) : 0, r.prev,
+        r.growth == null ? '' : r.growth, r.dRank == null ? '' : r.dRank])];
+  }
+
+  renderStateLB(f) {
+    const y = this.stLbYear, py = this.stLbPrev;
+    const cur = {}, prev = {};
+    this.data.by_state_mf.forEach(r => {
+      if (r.s === 'Rakan Niaga') return;
+      if (f.makers && !f.makers.has(r.mk)) return;
+      if (f.fuel && f.fuel !== '__all__' && r.fl !== f.fuel) return;
+      if (r.y === y) cur[r.s] = (cur[r.s] || 0) + r.n;
+      else if (r.y === py) prev[r.s] = (prev[r.s] || 0) + r.n;
+    });
+    const rankOf = (obj) => {
+      const m = new Map();
+      Object.entries(obj).sort((a, b) => b[1] - a[1]).forEach(([k], i) => m.set(k, i + 1));
+      return m;
+    };
+    const rc = rankOf(cur), rp = rankOf(prev);
+    const grand = Object.values(cur).reduce((a, b) => a + b, 0);
+    let rows = Object.entries(cur).map(([st, v]) => ({
+      name: st, cur: v, prev: prev[st] || 0,
+      growth: prev[st] ? (v - prev[st]) / prev[st] : null,
+      dRank: rp.has(st) ? rp.get(st) - rc.get(st) : null,
+    }));
+    rows.sort(this.stLbRank === 'growth'
+      ? (a, b) => (b.growth ?? -Infinity) - (a.growth ?? -Infinity)
+      : (a, b) => b.cur - a.cur);
+    const lmY = +(this.data.last_month_by_year[String(y)] || 12);
+    const lmP = +(this.data.last_month_by_year[String(py)] || 12);
+    const note = (lmY < 12 || lmP < 12) ? ' · caution: state data is annual, partial year not pro-rated' : '';
+    const sub = document.getElementById('st-lb-sub');
+    if (sub) sub.textContent = `${y} vs ${py} · Rakan Niaga excluded · reflects maker & fuel filters${note}`;
+    this._lbTable(document.getElementById('table-st-lb'), rows, 'State', grand, { origin: false, mkLink: false });
   }
 
   renderState(f) {
