@@ -743,6 +743,12 @@ body {
 .tab-chips button[data-fy] { background: #EEF2F7; border-color: #C7D4EE; color: #1B3F91; }
 .tab-chips button[data-fy]:hover { background: #DDE6F5; }
 .tab-chips button[data-fy].active { background: #1B3F91; border-color: #1B3F91; color: #fff; }
+.tab-fuel-select {
+  border: 1px solid #F3C1BC; background: #FDECEA; color: #B91C1C;
+  border-radius: 5px; padding: 3px 24px 3px 9px; font-size: 11px;
+  font-weight: 600; cursor: pointer;
+}
+.tab-fuel-select option { background: #fff; color: var(--text-primary); }
 /* Fuel family — EON red */
 .tab-chips button[data-ff] { background: #FDECEA; border-color: #F3C1BC; color: #B91C1C; }
 .tab-chips button[data-ff]:hover { background: #FADBD7; }
@@ -1000,10 +1006,7 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
         <button type="button" data-fy="last5">Last 5</button>
         <button type="button" data-fy="ytd">This yr</button>
         <span class="tc-label">Fuel</span>
-        <button type="button" data-ff="__all__">All</button>
-        <button type="button" data-ff="petrol">Petrol</button>
-        <button type="button" data-ff="electric">EV</button>
-        <button type="button" data-ff="hybrid_petrol">Hybrid</button>
+        <select id="tab-fuel" class="tab-fuel-select"></select>
         <button type="button" id="tab-all-filters">⛭ All filters</button>
       </div>
       <div class="tab-summary" id="tab-filter-summary"></div>
@@ -1849,12 +1852,16 @@ class Dashboard {
         this.render();
       });
     });
-    document.querySelectorAll('#tab-chips button[data-ff]').forEach(b => {
-      b.addEventListener('click', () => {
-        document.getElementById('filter-fuel').value = b.dataset.ff;
+    const tabFuel = document.getElementById('tab-fuel');
+    const mainFuel = document.getElementById('filter-fuel');
+    if (tabFuel && mainFuel) {
+      tabFuel.innerHTML = mainFuel.innerHTML;
+      tabFuel.value = mainFuel.value;
+      tabFuel.addEventListener('change', () => {
+        mainFuel.value = tabFuel.value;
         this.render();
       });
-    });
+    }
     document.getElementById('tab-all-filters').addEventListener('click', () => {
       const filtersEl = document.querySelector('.dashboard-header .filters');
       const mobile = document.body.classList.contains('is-mobile') || window.matchMedia('(max-width: 640px)').matches;
@@ -1920,8 +1927,8 @@ class Dashboard {
     document.querySelectorAll('#tab-chips button[data-fy]').forEach(b =>
       b.classList.toggle('active', b.dataset.fy === fyActive));
     const fuel = document.getElementById('filter-fuel').value;
-    document.querySelectorAll('#tab-chips button[data-ff]').forEach(b =>
-      b.classList.toggle('active', b.dataset.ff === fuel));
+    const tf = document.getElementById('tab-fuel');
+    if (tf && tf.value !== fuel) tf.value = fuel;
     const sum = document.getElementById('tab-filter-summary');
     if (sum) {
       const bits = [this._yearLabel(f)];
