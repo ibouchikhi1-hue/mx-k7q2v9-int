@@ -895,6 +895,33 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
   color: var(--text-secondary);
   font-size: 13px;
 }
+
+/* --- KPI strip inside the navy header --- */
+.dashboard-header .kpi-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  order: 5;
+}
+.dashboard-header .kpi-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: none;
+  flex: 0 1 auto;
+  min-width: 185px;
+  padding: 8px 14px;
+}
+.dashboard-header .kpi-label { color: rgba(255,255,255,0.55); }
+.dashboard-header .kpi-value { color: #ffffff; font-size: 18px; }
+.dashboard-header .kpi-sub  { color: rgba(255,255,255,0.65); }
+@media (max-width: 640px) {
+  .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .dashboard-header .kpi-card { min-width: 0; overflow: hidden; padding: 6px 6px; }
+}
+body.is-mobile .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+body.is-mobile .dashboard-header .kpi-card { min-width: 0; overflow: hidden; padding: 6px 6px; }
 </style>
 </head>
 <body>
@@ -966,7 +993,6 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
         <button class="btn-reset" id="btn-reset">Reset</button>
       </div>
     </div>
-  </header>
 
   <button type="button" class="kpi-toggle" id="kpi-toggle">Hide key figures ▲</button>
   <section class="kpi-row">
@@ -991,6 +1017,8 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
       <div class="kpi-sub" id="kpi-fuel-sub">&nbsp;</div>
     </div>
   </section>
+  </header>
+
   </div><!-- /.sticky-top -->
 
   <div class="tab-bar" id="tab-bar">
@@ -2990,6 +3018,17 @@ class Dashboard {
     } else {
       document.getElementById('kpi-fuel').textContent = '—';
       document.getElementById('kpi-fuel-sub').textContent = 'No data';
+    }
+    // Live header caption: reflects the active filters
+    const hdrSub = document.getElementById('dash-subtitle');
+    if (hdrSub) {
+      const mkSet = new Set();
+      rows.forEach(r => { if (r.mk !== this.NO_MAKER_SENTINEL) mkSet.add(r.mk); });
+      let lbl = this._yearLabel(f);
+      if (f.months) lbl += ' \u00b7 ' + this._monthLabel(f);
+      lbl += ' \u00b7 ' + fmt(total) + ' registrations across ' + mkSet.size + ' maker' + (mkSet.size === 1 ? '' : 's');
+      if (f.fuel !== '__all__') lbl += ' \u00b7 ' + (FUEL_DISPLAY[f.fuel] || f.fuel);
+      hdrSub.textContent = lbl;
     }
   }
 
