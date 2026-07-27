@@ -932,6 +932,16 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
 }
 body.is-mobile .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; width: 100%; }
 body.is-mobile .dashboard-header .kpi-card { min-width: 0; overflow: hidden; padding: 6px 6px; }
+
+/* --- Mobile: keep wide tables/charts inside the viewport --- */
+@media (max-width: 640px) {
+  .chart-row > * { min-width: 0; }
+  .chart-container { min-width: 0; max-width: 100%; }
+  .models-scroll, .table-section { min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+body.is-mobile .chart-row > * { min-width: 0; }
+body.is-mobile .chart-container { min-width: 0; max-width: 100%; }
+body.is-mobile .models-scroll, body.is-mobile .table-section { min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 </style>
 </head>
 <body>
