@@ -896,31 +896,41 @@ body.is-mobile .sticky-top .kpi-row.kpi-hidden { display: none; }
   font-size: 13px;
 }
 
-/* --- KPI strip inside the navy header --- */
-.dashboard-header .kpi-row {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 10px;
-  order: 5;
+/* --- KPI strip inside the navy header: 2x2 grid, top-right --- */
+@media (min-width: 641px) {
+  body:not(.is-mobile) .dashboard-header { align-items: flex-start; }
+  body:not(.is-mobile) .dashboard-header .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 205px));
+    gap: 8px;
+    order: 2;
+    margin-left: auto;
+    width: auto;
+  }
+  body:not(.is-mobile) .dashboard-header .filters { order: 6; width: 100%; }
 }
 .dashboard-header .kpi-card {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.16);
   box-shadow: none;
-  flex: 0 1 auto;
-  min-width: 185px;
-  padding: 8px 14px;
+  min-width: 0;
+  padding: 6px 12px;
 }
-.dashboard-header .kpi-label { color: rgba(255,255,255,0.55); }
-.dashboard-header .kpi-value { color: #ffffff; font-size: 18px; }
-.dashboard-header .kpi-sub  { color: rgba(255,255,255,0.65); }
+.dashboard-header .kpi-label {
+  color: rgba(255,255,255,0.55);
+  font-size: 9px; letter-spacing: 0.4px; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dashboard-header .kpi-value { color: #ffffff; font-size: 15px; }
+.dashboard-header .kpi-sub {
+  color: rgba(255,255,255,0.65); font-size: 10px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 @media (max-width: 640px) {
-  .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; width: 100%; }
   .dashboard-header .kpi-card { min-width: 0; overflow: hidden; padding: 6px 6px; }
 }
-body.is-mobile .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+body.is-mobile .dashboard-header .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; width: 100%; }
 body.is-mobile .dashboard-header .kpi-card { min-width: 0; overflow: hidden; padding: 6px 6px; }
 </style>
 </head>
