@@ -942,6 +942,17 @@ body.is-mobile .dashboard-header .kpi-card { min-width: 0; overflow: hidden; pad
 body.is-mobile .chart-row > * { min-width: 0; }
 body.is-mobile .chart-container { min-width: 0; max-width: 100%; }
 body.is-mobile .models-scroll, body.is-mobile .table-section { min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* --- Compact filter bar (desktop) --- */
+@media (min-width: 641px) {
+  body:not(.is-mobile) .dashboard-header { padding: 12px 22px; gap: 8px; }
+  body:not(.is-mobile) .dashboard-header .filters { margin-top: -2px; gap: 8px; }
+  body:not(.is-mobile) .filter-group { gap: 2px; }
+  body:not(.is-mobile) .filter-group label { font-size: 9px; letter-spacing: 0.4px; }
+  body:not(.is-mobile) .filter-group select { padding: 4px 8px; font-size: 12px; min-width: 100px; }
+  body:not(.is-mobile) .ms-button { padding: 4px 24px 4px 8px; font-size: 12px; min-width: 140px; }
+  body:not(.is-mobile) .btn-reset { padding: 4px 12px; font-size: 12px; }
+}
 </style>
 </head>
 <body>
