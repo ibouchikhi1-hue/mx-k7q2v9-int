@@ -953,6 +953,24 @@ body.is-mobile .models-scroll, body.is-mobile .table-section { min-width: 0; ove
   body:not(.is-mobile) .ms-button { padding: 4px 24px 4px 8px; font-size: 12px; min-width: 140px; }
   body:not(.is-mobile) .btn-reset { padding: 4px 12px; font-size: 12px; }
 }
+
+/* --- Header grid: title + filters stacked left, KPI 2x2 right --- */
+@media (min-width: 641px) {
+  body:not(.is-mobile) .dashboard-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title kpi" "filters kpi";
+    column-gap: 18px;
+    row-gap: 8px;
+    align-items: center;
+    padding: 10px 22px;
+  }
+  body:not(.is-mobile) .dashboard-header > div:first-child { grid-area: title; }
+  body:not(.is-mobile) .dashboard-header .filters { grid-area: filters; width: auto; margin: 0; }
+  body:not(.is-mobile) .dashboard-header .kpi-row { grid-area: kpi; margin: 0; }
+  body:not(.is-mobile) .dashboard-header .filters-toggle,
+  body:not(.is-mobile) .dashboard-header .kpi-toggle { display: none; }
+}
 </style>
 </head>
 <body>
