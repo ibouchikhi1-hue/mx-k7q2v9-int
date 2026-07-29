@@ -972,6 +972,19 @@ body.is-mobile .models-scroll, body.is-mobile .table-section { min-width: 0; ove
   body:not(.is-mobile) .dashboard-header .kpi-toggle { display: none; }
 }
 </style>
+<style>/* mobile-comfort-v1 */
+@media (max-width: 640px) {
+  .dashboard-header .subtitle { font-size: 10px; }
+  .sticky-top .kpi-label { font-size: 9.5px; }
+  .tc-label { font-size: 10px; }
+  .tab-bar button, .tab-chips button { min-height: 30px; padding: 5px 10px; font-size: 12px; }
+  .tab-bar select { min-height: 30px; font-size: 12px; }
+  .kpi-toggle, .filters-toggle { min-height: 30px; }
+}
+body.is-mobile .dashboard-header .subtitle { font-size: 10px; }
+body.is-mobile .tab-bar button, body.is-mobile .tab-chips button { min-height: 30px; padding: 5px 10px; font-size: 12px; }
+body.is-mobile .tab-bar select { min-height: 30px; font-size: 12px; }
+</style>
 </head>
 <body>
 <div class="dashboard-container">
