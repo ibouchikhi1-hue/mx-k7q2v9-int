@@ -24,8 +24,9 @@ main{padding:24px 34px;max-width:1500px;margin:0 auto}
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;align-items:stretch}
 .card{border:1px solid #D6DEEA;border-radius:8px;padding:16px 18px 14px;display:flex;flex-direction:column}
 .card h2{font-size:14px;color:var(--eon);letter-spacing:.4px;margin-bottom:10px;text-transform:uppercase;text-align:center}
-.c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}
-@media(max-width:1000px){.c8,.c6,.c4{grid-column:span 12}}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}
+@media(max-width:1400px){.c3{grid-column:span 6}}
+@media(max-width:1000px){.c8,.c6,.c4,.c3{grid-column:span 12}}
 .fbar{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:10px;background:var(--band);border:1px solid #E3EAF4;border-radius:8px;padding:7px 10px}
 .fgrp{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .flbl{font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:.6px;margin-right:2px}
@@ -35,6 +36,19 @@ main{padding:24px 34px;max-width:1500px;margin:0 auto}
 .fgrp button.on:hover{background:var(--vib)}
 .fgrp select,.fgrp input{border:1px solid var(--eon);border-radius:6px;padding:3px 7px;font-size:11.5px;font-family:inherit;color:var(--eon);background:#fff}
 .fgrp input{width:170px}
+.dualwrap{position:relative;width:236px;height:22px;display:inline-block}
+.dualtrack{position:absolute;top:9px;left:0;right:0;height:4px;background:#D6DEEA;border-radius:2px}
+.dualfill{position:absolute;top:9px;height:4px;background:var(--eon);border-radius:2px}
+.dualwrap input[type=range]{position:absolute;top:0;left:0;width:100%;height:22px;margin:0;padding:0;border:0;
+ background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.dualwrap input[type=range]::-webkit-slider-runnable-track{background:transparent;border:0}
+.dualwrap input[type=range]::-moz-range-track{background:transparent;border:0}
+.dualwrap input[type=range]::-webkit-slider-thumb{pointer-events:auto;-webkit-appearance:none;width:15px;height:15px;
+ border-radius:50%;background:#fff;border:2px solid var(--eon);cursor:grab;margin-top:-5.5px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.dualwrap input[type=range]::-moz-range-thumb{pointer-events:auto;width:15px;height:15px;border-radius:50%;
+ background:#fff;border:2px solid var(--eon);cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.rngval{font-size:11.5px;font-weight:700;color:var(--eon);background:#fff;border:1px solid var(--eon);
+ border-radius:13px;padding:2px 11px;white-space:nowrap}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:#444;justify-content:center;margin-bottom:8px}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
@@ -79,15 +93,16 @@ noscript{display:block;padding:20px;color:#B00;font-size:14px}
 <noscript>This dashboard needs JavaScript enabled to render.</noscript>
 <div class="kpis" id="kpis"></div>
 <div class="grid">
-  <div class="card c8"><h2>Total Industry Volume</h2>
+  <div class="card c12"><h2>Total Industry Volume</h2>
     <div class="fbar">
-      <span class="fgrp"><span class="flbl">Period</span><span id="fTivP"></span></span>
+      <span class="fgrp"><span class="flbl">Period</span><span class="dualwrap">
+        <span class="dualtrack"></span><span class="dualfill" id="fTivFill"></span>
+        <input type="range" id="fTivA" min="0" max="59" step="1" value="43" oninput="drawTiv()">
+        <input type="range" id="fTivB" min="0" max="59" step="1" value="59" oninput="drawTiv()">
+      </span></span>
+      <span class="fgrp"><span class="rngval" id="fTivLbl"></span></span>
       <span class="fgrp"><span class="flbl">View</span><span id="fTivV"></span></span>
     </div><div class="legend" id="lTiv"></div><div class="chart" id="cTiv"></div></div>
-
-  <div class="card c4"><h2>Production vs Sales</h2>
-    <div class="fbar"><span class="fgrp"><span class="flbl">Measure</span><span id="fProdM"></span></span></div>
-    <div class="legend" id="lProd"></div><div class="chart" id="cProd"></div></div>
 
   <div class="card c8"><h2>Monthly Sales</h2>
     <div class="fbar">
@@ -103,13 +118,11 @@ noscript{display:block;padding:20px;color:#B00;font-size:14px}
   <div class="card c6"><h2>Passenger Vehicle Segment</h2>
     <div class="fbar">
       <span class="fgrp"><span class="flbl">View</span><span id="fPvV"></span></span>
-      <span class="fgrp"><span class="flbl">Period</span><span id="fPvP"></span></span>
     </div><div class="legend" id="lPv"></div><div class="chart" id="cPv"></div></div>
 
   <div class="card c6"><h2>Commercial Vehicle Segment</h2>
     <div class="fbar">
       <span class="fgrp"><span class="flbl">View</span><span id="fCvV"></span></span>
-      <span class="fgrp"><span class="flbl">Period</span><span id="fCvP"></span></span>
     </div><div class="legend" id="lCv"></div><div class="chart" id="cCv"></div></div>
 
   <div class="card c6"><h2>Top Brands</h2>
@@ -124,6 +137,15 @@ noscript{display:block;padding:20px;color:#B00;font-size:14px}
       <span class="fgrp"><span class="flbl">Year</span><span id="fGrY"></span></span>
       <span class="fgrp"><span class="flbl">Groups</span><select id="fGrN"><option>6</option><option selected>9</option><option>12</option></select></span>
     </div><div class="chart" id="cGr"></div></div>
+
+  <div class="card c6"><h2>Production vs Sales</h2>
+    <div class="fbar"><span class="fgrp"><span class="flbl">Measure</span><span id="fProdM"></span></span></div>
+    <div class="legend" id="lProd"></div><div class="chart" id="cProd"></div></div>
+
+  <div class="card c6"><h2>CKD vs CBU</h2>
+    <div class="fbar"><span class="fgrp"><span class="flbl">View</span><span id="fAsmV"></span></span></div>
+    <div class="legend" id="lAsm"></div><div class="chart" id="cAsm"></div></div>
+
 
   <div class="card c12"><h2>Registrations by State</h2>
     <div class="fbar">
@@ -249,11 +271,21 @@ function barChart(id,labels,series,opt){
     if(i%every===0)g+='<text x="'+(L+i*slot+slot/2)+'" y="'+(H-14)+'" text-anchor="middle" fill="#444">'+esc(labels[i])+'</text>';
   }
   if(opt.line){
-    var lm=0;opt.line.data.forEach(function(v){if(v>lm)lm=v;});lm=niceMax(lm||1);
-    var pts=opt.line.data.map(function(v,i){return (L+i*slot+slot/2).toFixed(1)+','+(T+ph-ph*v/lm).toFixed(1);}).join(' ');
+    var ld=opt.line.data, lmax=Math.max.apply(null,ld), lmin=Math.min.apply(null,ld);
+    if(lmax<0)lmax=0; if(lmin>0)lmin=0;
+    var lstep=niceStep((lmax-lmin)/4)||1;
+    lmax=Math.ceil(lmax/lstep)*lstep; lmin=Math.floor(lmin/lstep)*lstep;
+    var lspan=(lmax-lmin)||1;
+    var ly=function(v){return T+ph-ph*(v-lmin)/lspan;};
+    if(lmin<0){                                   /* zero reference line */
+      g+='<line x1="'+L+'" y1="'+ly(0).toFixed(1)+'" x2="'+(W-R)+'" y2="'+ly(0).toFixed(1)+
+         '" stroke="'+opt.line.color+'" stroke-width="1" stroke-dasharray="3 3" opacity=".5"/>';
+      g+='<text x="'+(W-R)+'" y="'+(ly(0)-3).toFixed(1)+'" text-anchor="end" fill="'+opt.line.color+'" font-size="9">0%</text>';
+    }
+    var pts=ld.map(function(v,i){return (L+i*slot+slot/2).toFixed(1)+','+ly(v).toFixed(1);}).join(' ');
     g+='<polyline points="'+pts+'" fill="none" stroke="'+opt.line.color+'" stroke-width="2.5"/>';
-    opt.line.data.forEach(function(v,i){g+='<circle cx="'+(L+i*slot+slot/2).toFixed(1)+'" cy="'+(T+ph-ph*v/lm).toFixed(1)+'" r="4" fill="'+opt.line.color+'"'+
-      TIP(labels[i],[opt.line.name+': '+v.toFixed(1)+'%'])+'/>';});
+    ld.forEach(function(v,i){g+='<circle cx="'+(L+i*slot+slot/2).toFixed(1)+'" cy="'+ly(v).toFixed(1)+'" r="4" fill="'+opt.line.color+'"'+
+      TIP(labels[i],[opt.line.name+': '+(v>=0?'+':'')+v.toFixed(1)+'%'])+'/>';});
   }
   el(id).innerHTML=g+'</svg>';
 }
@@ -340,26 +372,57 @@ el('kpis').innerHTML=kp.map(function(k){
  return '<div class="kpi"><div class="lbl">'+k.l+'</div><div class="val">'+k.v+'</div>'+d+'<div class="s">'+k.s+'</div></div>';}).join('');
 
 /* ---------- 1. TIV ---------- */
-var tivP='2010',tivV='stack';
-window.tTivP=function(v){tivP=v;drawTiv();};
+var tivV='stack';
 window.tTivV=function(v){tivV=v;drawTiv();};
+var MONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+/* selectable periods: every full year, then the current YTD */
+var TIVP=D.tiv_yearly.map(function(x){return {lab:String(x.y),y:x.y,pv:x.pv,cv:x.cv,tiv:x.tiv};});
+TIVP.push({lab:'2026 YTD',y:2026,pv:y26.pv,cv:y26.cv,tiv:y26.tiv,ytd:true});
+(function(){var n=TIVP.length-1;
+  el('fTivA').max=n; el('fTivB').max=n;
+  var def=0; for(var i=0;i<TIVP.length;i++) if(TIVP[i].y===2010) def=i;
+  el('fTivA').value=def; el('fTivB').value=n;})();
 function drawTiv(){
-  chips('fTivP',[{v:'all',t:'All years'},{v:'1990',t:'1990+'},{v:'2010',t:'2010+'},{v:'2020',t:'2020s'}],tivP,'tTivP');
-  chips('fTivV',[{v:'stack',t:'PV + CV'},{v:'growth',t:'TIV + YoY %'}],tivV,'tTivV');
-  var from=tivP==='all'?0:+tivP;
-  var rows=D.tiv_yearly.filter(function(x){return x.y>=from;});
-  var lab=rows.map(function(x){return x.y;});
+  chips('fTivV',[{v:'stack',t:'PV + CV'},{v:'growth',t:'TIV + YoY %'},{v:'mom',t:'Monthly + MoM %'}],tivV,'tTivV');
+  var i=+el('fTivA').value, j=+el('fTivB').value;
+  if(i>j){var t=i;i=j;j=t;}
+  var n=TIVP.length-1;
+  el('fTivFill').style.left=(i/n*100)+'%';
+  el('fTivFill').style.width=((j-i)/n*100)+'%';
+  if(tivV==='mom'){                       /* monthly detail exists 2020-2026 only */
+    var lo=Math.max(TIVP[i].y,2020), hi=Math.min(TIVP[j].y,2026);
+    if(lo>hi){lo=2020;hi=2026;}
+    el('fTivLbl').innerHTML=lo+' – '+hi+'  <span style="font-weight:400;color:#77787B">monthly</span>';
+    var lab=[],vol=[];
+    for(var y=lo;y<=hi;y++){
+      var arr=D.monthly[y]; if(!arr)continue;
+      for(var m=0;m<12;m++) if(arr[m]) {lab.push(MONS[m]+" '"+String(y).slice(2)); vol.push(arr[m]);}
+    }
+    var mom=vol.map(function(v,k){return k===0?0:(vol[k-1]?(v/vol[k-1]-1)*100:0);});
+    barChart('cTiv',lab,[{name:'TIV',color:EON,data:vol}],
+      {maxTicks:18,w:1396,line:{name:'Month-on-month',color:RED,data:mom}});
+    legend('lTiv',[['Monthly TIV',EON],['Month-on-month % — right scale',RED]]);
+    return;
+  }
+  var rows=TIVP.slice(i,j+1);
+  el('fTivLbl').textContent=rows[0].lab+' – '+rows[rows.length-1].lab+
+    '  ('+rows.length+(rows.length===1?' period)':' periods)');
+  var labs=rows.map(function(x){return x.lab;});
   if(tivV==='stack'){
-    barChart('cTiv',lab,[{name:'PV',color:EON,data:rows.map(function(x){return x.pv;})},
-                         {name:'CV',color:CORAL,data:rows.map(function(x){return x.cv;})}],{stacked:true,maxTicks:12,w:913});
+    barChart('cTiv',labs,[{name:'PV',color:EON,data:rows.map(function(x){return x.pv;})},
+                          {name:'CV',color:CORAL,data:rows.map(function(x){return x.cv;})}],
+             {stacked:true,maxTicks:12,w:1396});
     legend('lTiv',[['Passenger Vehicles',EON],['Commercial Vehicles',CORAL]]);
   }else{
-    var yoy=rows.map(function(x){var pr=fy(x.y-1);return pr?((x.tiv/pr.tiv-1)*100):0;});
-    barChart('cTiv',lab,[{name:'TIV',color:EON,data:rows.map(function(x){return x.tiv;})}],
-      {maxTicks:12,w:913,line:{name:'YoY growth',color:RED,data:yoy.map(function(v){return Math.max(v,0);})}});
-    legend('lTiv',[['Total Industry Volume',EON],['YoY growth % — right scale',RED]]);
+    var yoy=rows.map(function(x){
+      if(x.ytd)return (y26.tiv/y25.tiv-1)*100;      /* like-for-like vs revised YTD Jun 2025 */
+      var pr=fy(x.y-1);return pr?((x.tiv/pr.tiv-1)*100):0;});
+    barChart('cTiv',labs,[{name:'TIV',color:EON,data:rows.map(function(x){return x.tiv;})}],
+      {maxTicks:12,w:1396,line:{name:'Year-on-year',color:RED,data:yoy}});
+    legend('lTiv',[['Total Industry Volume',EON],['Year-on-year % — right scale',RED]]);
   }
 }
+window.drawTiv=drawTiv;
 drawTiv();
 
 /* ---------- 2. Production vs Sales ---------- */
@@ -372,10 +435,35 @@ function drawProd(){
    {name:'Production',color:VIB,data:py.map(function(y){return D.production[y][prodM];})},
    {name:'Sales (TIV)',color:SKY,data:py.map(function(y){var t=fy(y);
      if(t)return prodM==='tiv'?t.tiv:t[prodM];
-     return +y===2026?(prodM==='tiv'?y26.tiv:y26[prodM]):0;})}],{h:300,w:429});
+     return +y===2026?(prodM==='tiv'?y26.tiv:y26[prodM]):0;})}],{h:300,w:671,maxTicks:5});
   legend('lProd',[['Production',VIB],['Sales — TIV',SKY]]);
 }
 drawProd();
+
+/* ---------- 2b. CKD vs CBU ---------- */
+var asmV='units';
+window.tAsmV=function(v){asmV=v;drawAsm();};
+function drawAsm(){
+  chips('fAsmV',[{v:'units',t:'Units'},{v:'share',t:'% share'}],asmV,'tAsmV');
+  var labs=D.state_periods.map(function(p){return p.replace(' (Jun)','').replace('2025 YTD','\u201925 YTD');});
+  var ckd=[],cbu=[];
+  D.state_periods.forEach(function(p){
+    var c=D.states_cube[p]||{},k=0,b=0,sg,st;
+    for(sg in c){
+      var am=c[sg];
+      if(am.CKD)for(st in am.CKD)k+=am.CKD[st];
+      if(am.CBU)for(st in am.CBU)b+=am.CBU[st];
+    }
+    ckd.push(k);cbu.push(b);});
+  var isPct=asmV==='share';
+  var dk=ckd.slice(),db=cbu.slice();
+  if(isPct)for(var i=0;i<dk.length;i++){var t=ckd[i]+cbu[i]||1;dk[i]=ckd[i]/t*100;db[i]=cbu[i]/t*100;}
+  barChart('cAsm',labs,[{name:'CKD',color:EON,data:dk},{name:'CBU',color:CORAL,data:db}],
+    {stacked:true,pct:isPct,h:300,w:671,maxTicks:4});
+  var tot=ckd[2]+cbu[2]||1;
+  legend('lAsm',[['CKD',EON],['CBU '+(cbu[2]/tot*100).toFixed(1)+'% in 2024',CORAL]]);
+}
+drawAsm();
 
 /* ---------- 3. Monthly ---------- */
 var MONL=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -420,18 +508,14 @@ var PVSEG=['PASSENGER CAR','4WD/SUV','MPV','WINDOW VAN'];
 var CVSEG=['PICK-UP','TRUCK','PRIME MOVER','PANEL VAN','BUS'];
 var SEGN={'PASSENGER CAR':'Passenger Car','4WD/SUV':'4WD / SUV','MPV':'MPV','WINDOW VAN':'Window Van',
           'PICK-UP':'Pick-up','TRUCK':'Truck','PRIME MOVER':'Prime Mover','PANEL VAN':'Panel Van','BUS':'Bus'};
-var pvV='share',pvP='recent',cvV='share',cvP='recent';
+var pvV='share',cvV='share';
 window.tPvV=function(v){pvV=v;drawMix('pv');};
-window.tPvP=function(v){pvP=v;drawMix('pv');};
 window.tCvV=function(v){cvV=v;drawMix('cv');};
-window.tCvP=function(v){cvP=v;drawMix('cv');};
 function drawMix(which){
   var isPV=which==='pv',segs=isPV?PVSEG:CVSEG;
-  var view=isPV?pvV:cvV,per=isPV?pvP:cvP;
+  var view=isPV?pvV:cvV;
   chips(isPV?'fPvV':'fCvV',[{v:'share',t:'Share %'},{v:'units',t:'Units'}],view,isPV?'tPvV':'tCvV');
-  chips(isPV?'fPvP':'fCvP',[{v:'recent',t:'2023 →'},{v:'all',t:'All years'}],per,isPV?'tPvP':'tCvP');
-  var from=per==='recent'?2023:2021;
-  var sy=Object.keys(D.segments).filter(function(y){return +y>=from;});
+  var sy=Object.keys(D.segments).filter(function(y){return +y>=2021;});
   var isShare=view==='share';
   barChart(isPV?'cPv':'cCv',sy.map(function(y){return +y===2026?'2026*':y;}),
     segs.map(function(s,i){return {name:SEGN[s],color:PAL[(isPV?i:i+2)%PAL.length],
