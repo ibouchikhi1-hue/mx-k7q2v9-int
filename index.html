@@ -9,15 +9,15 @@
 :root {
   --bg-primary: #f5f6f8;
   --bg-card: #ffffff;
-  --bg-header: #0B1D51;   /* EON navy */
+  --bg-header: #00205C;   /* EON navy */
   --bg-header-2: #16307A;
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-on-dark: #ffffff;
-  --color-1: #1B3F91;    /* EON blue */
+  --color-1: #364ED7;    /* EON blue */
   --color-2: #f97316;
   --color-3: #10b981;
-  --color-4: #E32119;    /* EON red */
+  --color-4: #F1474A;    /* EON red */
   --color-5: #8b5cf6;
   --color-6: #f59e0b;
   --color-7: #06b6d4;
@@ -590,8 +590,8 @@ body {
 .bar-fill {
   position: absolute;
   left: 0; top: 0; bottom: 0;
-  background: rgba(27, 63, 145, 0.10);
-  border-right: 2px solid rgba(227, 33, 25, 0.55);
+  background: rgba(54, 78, 215, 0.10);
+  border-right: 2px solid rgba(241, 71, 74, 0.55);
   z-index: 0;
 }
 .bar-cell span { position: relative; z-index: 1; }
@@ -726,8 +726,8 @@ body {
 }
 .tab-select-wrap { display: flex; align-items: center; gap: 8px; padding-bottom: 4px; }
 .tab-select {
-  padding: 7px 30px 7px 12px; border: 1px solid #0B1D51; border-radius: 6px;
-  background: #0B1D51; color: #fff; font-size: 13px; font-weight: 600;
+  padding: 7px 30px 7px 12px; border: 1px solid #00205C; border-radius: 6px;
+  background: #00205C; color: #fff; font-size: 13px; font-weight: 600;
   cursor: pointer; min-width: 190px;
 }
 .tab-select option { background: #fff; color: var(--text-primary); }
@@ -740,9 +740,9 @@ body {
   border-radius: 5px; padding: 3px 9px; font-size: 11px; font-weight: 600; cursor: pointer;
 }
 /* Years family — EON blue */
-.tab-chips button[data-fy] { background: #EEF2F7; border-color: #C7D4EE; color: #1B3F91; }
+.tab-chips button[data-fy] { background: #EEF2F7; border-color: #C7D4EE; color: #364ED7; }
 .tab-chips button[data-fy]:hover { background: #DDE6F5; }
-.tab-chips button[data-fy].active { background: #1B3F91; border-color: #1B3F91; color: #fff; }
+.tab-chips button[data-fy].active { background: #364ED7; border-color: #364ED7; color: #fff; }
 .tab-fuel-select {
   border: 1px solid #F3C1BC; background: #FDECEA; color: #B91C1C;
   border-radius: 5px; padding: 3px 24px 3px 9px; font-size: 11px;
@@ -752,7 +752,7 @@ body {
 /* Fuel family — EON red */
 .tab-chips button[data-ff] { background: #FDECEA; border-color: #F3C1BC; color: #B91C1C; }
 .tab-chips button[data-ff]:hover { background: #FADBD7; }
-.tab-chips button[data-ff].active { background: #E32119; border-color: #E32119; color: #fff; }
+.tab-chips button[data-ff].active { background: #F1474A; border-color: #F1474A; color: #fff; }
 #tab-all-filters { background: #fff; border: 1px dashed #9CA3AF; color: var(--text-primary); }
 #tab-all-filters:hover { border-style: solid; }
 .tab-summary { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
@@ -764,13 +764,13 @@ body {
   .filters-fab {
     display: flex; align-items: center; gap: 6px;
     position: fixed; bottom: 14px; right: 12px; z-index: 95;
-    background: #E32119; color: #fff; border: none; border-radius: 999px;
+    background: #F1474A; color: #fff; border: none; border-radius: 999px;
     padding: 10px 16px; font-size: 13px; font-weight: 700;
     box-shadow: 0 6px 18px rgba(15,23,42,0.35); cursor: pointer;
   }
   .dashboard-header .filters.sheet.open {
     position: fixed; top: 0; left: 0; right: 0; z-index: 90;
-    background: linear-gradient(135deg, #0B1D51 0%, #16307A 100%);
+    background: linear-gradient(135deg, #00205C 0%, #16307A 100%);
     padding: 16px 16px 20px; margin: 0; max-height: 85vh; overflow-y: auto;
     box-shadow: 0 12px 30px rgba(0,0,0,0.45); border-radius: 0 0 12px 12px;
   }
@@ -778,13 +778,13 @@ body {
 body.is-mobile .filters-fab {
   display: flex; align-items: center; gap: 6px;
   position: fixed; bottom: 14px; right: 12px; z-index: 95;
-  background: #E32119; color: #fff; border: none; border-radius: 999px;
+  background: #F1474A; color: #fff; border: none; border-radius: 999px;
   padding: 10px 16px; font-size: 13px; font-weight: 700;
   box-shadow: 0 6px 18px rgba(15,23,42,0.35); cursor: pointer;
 }
 body.is-mobile .dashboard-header .filters.sheet.open {
   position: fixed; top: 0; left: 0; right: 0; z-index: 90;
-  background: linear-gradient(135deg, #0B1D51 0%, #16307A 100%);
+  background: linear-gradient(135deg, #00205C 0%, #16307A 100%);
   padding: 16px 16px 20px; margin: 0; max-height: 85vh; overflow-y: auto;
   box-shadow: 0 12px 30px rgba(0,0,0,0.45); border-radius: 0 0 12px 12px;
 }
@@ -796,7 +796,7 @@ body.is-mobile .dashboard-header .filters.sheet.open {
 }
 .btn-csv:hover { color: var(--text-primary); background: #f3f4f6; }
 .rank-up { color: #10b981; font-weight: 700; }
-.rank-down { color: #E32119; font-weight: 700; }
+.rank-down { color: #F1474A; font-weight: 700; }
 
 /* Mobile: compact header, drop-down filters, non-sticky band */
 .filters-toggle { display: none; }
@@ -1589,7 +1589,7 @@ async function __loadData() {
 }
 
 
-const COLORS = ['#1B3F91','#E32119','#10b981','#f97316','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#84cc16','#14b8a6','#a855f7','#eab308']; // EON navy + red lead
+const COLORS = ['#364ED7','#F1474A','#10b981','#f97316','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#84cc16','#14b8a6','#a855f7','#eab308']; // EON navy + red lead
 
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -3411,8 +3411,8 @@ class Dashboard {
       label: 'Total volume',
       data: totals,
       yAxisID: 'yTotal',
-      borderColor: '#0B1D51',
-      backgroundColor: '#0B1D51',
+      borderColor: '#00205C',
+      backgroundColor: '#00205C',
       borderWidth: 2,
       pointRadius: this.fuelStackMode === 'monthly' ? 0 : 3,
       pointHoverRadius: 5,
@@ -4040,7 +4040,7 @@ class Dashboard {
     const series = [
       ['Electric', 'ev', '#10b981'],
       ['Hybrid', 'hybrid', '#f59e0b'],
-      ['Electrified (BEV+HEV)', 'elect', '#0B1D51'],
+      ['Electrified (BEV+HEV)', 'elect', '#00205C'],
       ['Diesel', 'diesel', '#6b7280'],
     ];
     const datasets = series.map(([label, key, color]) => {
@@ -4619,7 +4619,7 @@ class Dashboard {
     };
     this._replaceChart('natvsnon', 'chart-natvsnon', {
       type: 'line',
-      data: { labels: years.map(String), datasets: [mk('National (Perodua + Proton)', nat, '#1B3F91'), mk('Non-national', oth, '#E32119')] },
+      data: { labels: years.map(String), datasets: [mk('National (Perodua + Proton)', nat, '#364ED7'), mk('Non-national', oth, '#F1474A')] },
       options: {
         responsive: true, maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
