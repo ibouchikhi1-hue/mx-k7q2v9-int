@@ -314,14 +314,7 @@ select#makeSel:hover,select#makeSel:focus{border-color:var(--vibrant);box-shadow
 .bp-rules{margin:4px 0 0 4px;padding-left:18px;font-size:12.5px;color:var(--ink);line-height:1.9;}
 .bp-rules li{margin-bottom:2px;}
 </style>
-<style>/* mobile-comfort-v1 */
-@media (max-width: 640px) {
-  .yrchips { display: flex !important; flex-wrap: wrap; gap: 6px; }
-  .yrchip { min-height: 32px; padding: 6px 12px; font-size: 13px; }
-  .kpi-lab { font-size: 11.5px !important; }
-  .logo-credit { font-size: 11px !important; }
-}
-</style>
+<style>/* mobile-comfort-v1 */ @media (max-width: 640px) { .yrchips { display: flex !important; flex-wrap: wrap; gap: 6px; } .yrchip { min-height: 32px; padding: 6px 12px; font-size: 13px; } .kpi-lab { font-size: 11.5px !important; } .logo-credit { font-size: 11px !important; } }</style>
 </head>
 <body>
 <header>
@@ -450,6 +443,21 @@ select#makeSel:hover,select#makeSel:focus{border-color:var(--vibrant);box-shadow
 <!-- ================= TAB: SEGMENT PERFORMANCE ================= -->
 <section class="panel" id="segperf">
   <div class="card">
+    <h3 class="lbh3">Segment Mix</h3>
+    <div class="lbfilter lbwrapf" style="margin-bottom:12px">
+      <div class="fgrp"><span class="ctl-lbl">Year</span><select id="spYear" class="bsel"></select></div>
+      <div class="fgrp"><span class="ctl-lbl">Period</span><div class="seg" id="spMode"><button data-m="ytd" class="on">YTD</button><button data-m="month">Month</button></div><select id="spMonth" class="bsel"></select></div>
+      <div class="fgrp"><span class="ctl-lbl">Vehicle type</span><div id="spVtSel" class="snapchips"></div></div>
+      <div class="fgrp"><span class="ctl-lbl">Treemap view</span><select id="spTreeSel" class="bsel"><option value="__ALL__">All segments</option></select></div>
+    </div>
+    <div class="chartbox" style="height:560px;position:relative"><canvas id="cSPtree"></canvas><div id="spTreeTip" class="postip"></div></div>
+    <div style="font-size:10.5px;color:var(--grey);margin:8px 0 16px">Treemap: area = 2026 YTD volume. Segments are blocks; models nest inside. Pick a segment above to zoom into its models. Hover for units &amp; share.</div>
+    <div class="lbtitle" id="spSegCmpLbl">Top segments — current vs prior year</div>
+    <div class="chartbox tall"><canvas id="cSPseg"></canvas></div>
+    <div class="tablewrap" style="margin-top:14px"><table id="tSPseg"><thead></thead><tbody></tbody></table></div>
+    <div style="font-size:10.5px;color:var(--grey);margin-top:10px">Top model = highest-volume model in the segment, 2026 YTD. YoY compares Jan&ndash;Jun 2026 vs Jan&ndash;Jun 2025.</div>
+  </div>
+  <div class="card">
     <h3 class="lbh3">Vehicle Type</h3>
     <div class="grid g2">
       <div><div class="lbtitle">Trend by year</div><div class="chartbox"><canvas id="cSPvt"></canvas></div></div>
@@ -470,21 +478,6 @@ select#makeSel:hover,select#makeSel:focus{border-color:var(--vibrant);box-shadow
     <h3 class="lbh3">Body Type</h3>
     <div class="chartbox tall"><canvas id="cSPbody"></canvas></div>
     <div class="tablewrap" style="margin-top:14px"><table id="tSPbody"><thead></thead><tbody></tbody></table></div>
-  </div>
-  <div class="card">
-    <h3 class="lbh3">Segment Mix</h3>
-    <div class="lbfilter lbwrapf" style="margin-bottom:12px">
-      <div class="fgrp"><span class="ctl-lbl">Year</span><select id="spYear" class="bsel"></select></div>
-      <div class="fgrp"><span class="ctl-lbl">Period</span><div class="seg" id="spMode"><button data-m="ytd" class="on">YTD</button><button data-m="month">Month</button></div><select id="spMonth" class="bsel"></select></div>
-      <div class="fgrp"><span class="ctl-lbl">Vehicle type</span><div id="spVtSel" class="snapchips"></div></div>
-      <div class="fgrp"><span class="ctl-lbl">Treemap view</span><select id="spTreeSel" class="bsel"><option value="__ALL__">All segments</option></select></div>
-    </div>
-    <div class="chartbox" style="height:560px;position:relative"><canvas id="cSPtree"></canvas><div id="spTreeTip" class="postip"></div></div>
-    <div style="font-size:10.5px;color:var(--grey);margin:8px 0 16px">Treemap: area = 2026 YTD volume. Segments are blocks; models nest inside. Pick a segment above to zoom into its models. Hover for units &amp; share.</div>
-    <div class="lbtitle" id="spSegCmpLbl">Top segments — current vs prior year</div>
-    <div class="chartbox tall"><canvas id="cSPseg"></canvas></div>
-    <div class="tablewrap" style="margin-top:14px"><table id="tSPseg"><thead></thead><tbody></tbody></table></div>
-    <div style="font-size:10.5px;color:var(--grey);margin-top:10px">Top model = highest-volume model in the segment, 2026 YTD. YoY compares Jan&ndash;Jun 2026 vs Jan&ndash;Jun 2025.</div>
   </div>
 </section>
 <section class="panel" id="positioning">
@@ -1582,10 +1575,8 @@ function renderSPmix(){
   const lb=tr.dataset.lb, cm=(spCurAgg[lb]||{}).models||{}, pm=(spPrevAgg[lb]||{}).models||{};
   const names=Array.from(new Set([...Object.keys(cm),...Object.keys(pm)]));
   const st=(spCurAgg[lb]||{}).tot||1;
-  let subs=names.map(n=>({n,c:cm[n]||0,p:pm[n]||0})).sort((a,b)=>b.c-a.c);
-  const extra=subs.length>20?subs.length-20:0; if(extra)subs=subs.slice(0,20);
-  let html=subs.map(s2=>'<tr class="lbsub"><td class="subind" style="text-align:left">'+s2.n+'</td><td>'+fmt(s2.c)+'</td><td>'+(st?(s2.c/st*100).toFixed(1):0)+'%</td><td>'+fmt(s2.p)+'</td><td>'+spGrowth(s2.c,s2.p)+'</td><td></td><td></td></tr>').join('');
-  if(extra)html+='<tr class="lbsub"><td class="subind" style="text-align:left;color:var(--grey)">\u2026 '+extra+' more models</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+  const subs=names.map(n=>({n,c:cm[n]||0,p:pm[n]||0})).sort((a,b)=>b.c-a.c);
+  const html=subs.map(s2=>'<tr class="lbsub"><td class="subind" style="text-align:left">'+s2.n+'</td><td>'+fmt(s2.c)+'</td><td>'+(st?(s2.c/st*100).toFixed(1):0)+'%</td><td>'+fmt(s2.p)+'</td><td>'+spGrowth(s2.c,s2.p)+'</td><td></td><td></td></tr>').join('');
   tr.insertAdjacentHTML('afterend',html);tr.querySelector('.caret').textContent='\u25BE';};});
  renderSegTree();
 }
