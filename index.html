@@ -77,6 +77,22 @@ body {
   color: rgba(255,255,255,0.75); letter-spacing: 0.03em; margin-top: 1px;
 }
 .dashboard-header .subtitle { font-size: 13px; color: rgba(255,255,255,0.7); }
+/* update-pill-v1 — "last updated" callout in the header */
+.update-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 999px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.24);
+  font-size: 11px; font-weight: 600; line-height: 1.4;
+  color: rgba(255,255,255,0.95); white-space: nowrap;
+}
+.update-pill .up-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #66AD55; flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(102,173,85,0.28);
+}
+.update-pill .up-sep { opacity: 0.45; font-weight: 400; }
+.update-pill .up-when { font-weight: 400; opacity: 0.85; }
 .filters { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-group label { font-size: 11px; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
@@ -806,7 +822,9 @@ body.is-mobile .dashboard-header .filters.sheet.open {
   .dashboard-header h1 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dashboard-header h1 .h1-sub { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dashboard-header .subtitle { font-size: 9px; }
-  .dashboard-header #refresh-stamp { display: none; }
+  .dashboard-header #refresh-stamp { display: block; margin-top: 4px !important; }
+  .dashboard-header .update-pill { font-size: 9px; padding: 2px 7px; gap: 4px; }
+  .dashboard-header .update-pill .up-dot { width: 5px; height: 5px; }
   .dashboard-header img { height: 20px !important; }
   .dashboard-header .title-group { min-width: 0; }
   .dashboard-header .subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -826,7 +844,9 @@ body.is-mobile .dashboard-header { padding: 10px 14px; gap: 8px; }
 body.is-mobile .dashboard-header h1 { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.is-mobile .dashboard-header h1 .h1-sub { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.is-mobile .dashboard-header .subtitle { font-size: 9px; }
-body.is-mobile .dashboard-header #refresh-stamp { display: none; }
+body.is-mobile .dashboard-header #refresh-stamp { display: block; margin-top: 4px !important; }
+body.is-mobile .dashboard-header .update-pill { font-size: 9px; padding: 2px 7px; gap: 4px; }
+body.is-mobile .dashboard-header .update-pill .up-dot { width: 5px; height: 5px; }
 body.is-mobile .dashboard-header img { height: 20px !important; }
 body.is-mobile .dashboard-header .title-group { min-width: 0; }
 body.is-mobile .dashboard-header .subtitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1679,8 +1699,25 @@ class Dashboard {
     // Stamp the last-refresh timestamp so cache issues are obvious
     const stamp = document.getElementById('refresh-stamp');
     if (stamp) {
-      const focus = (this.data.insights && this.data.insights.items) ? this.data.insights.items.length : 0;
-      stamp.textContent = `Data refreshed ${this.data.generated_at || ''} · ${focus} focus brand cards`;
+      const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      // latest month actually present in the data
+      let cover = '';
+      try {
+        const lm = this.data.last_month_by_year || {};
+        const ly = Math.max(...Object.keys(lm).map(Number));
+        cover = `${MON[(lm[String(ly)] || 1) - 1]} ${ly}`;
+      } catch (e) { cover = ''; }
+      // when the payload was built, e.g. "2026-10-11 09:06" -> "11 Oct 2026"
+      let when = '';
+      const g = String(this.data.generated_at || '');
+      const gm = g.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (gm) when = `${Number(gm[3])} ${MON[Number(gm[2]) - 1]} ${gm[1]}`;
+      stamp.innerHTML =
+        '<span class="update-pill" title="Latest month in the data, and when this dashboard was last rebuilt">' +
+          '<span class="up-dot"></span>' +
+          'Data to ' + (cover || 'n/a') +
+          (when ? '<span class="up-sep">•</span><span class="up-when">updated ' + when + '</span>' : '') +
+        '</span>';
     }
     const subtitle = document.getElementById('dash-subtitle');
     if (subtitle) {
