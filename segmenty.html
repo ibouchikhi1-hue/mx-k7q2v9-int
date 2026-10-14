@@ -357,7 +357,7 @@ select#makeSel:hover,select#makeSel:focus{border-color:var(--vibrant);box-shadow
 .bp-rules{margin:4px 0 0 4px;padding-left:18px;font-size:12.5px;color:var(--ink);line-height:1.9;}
 .bp-rules li{margin-bottom:2px;}
 </style>
-<style>/* mobile-comfort-v1 */ @media (max-width: 640px) { .yrchips { display: flex !important; flex-wrap: wrap; gap: 6px; } .yrchip { min-height: 32px; padding: 6px 12px; font-size: 13px; } .kpi-lab { font-size: 11.5px !important; } .logo-credit { font-size: 11px !important; } }</style></head>
+<style>/* mobile-comfort-v1 */ @media (max-width: 640px) { .yrchips { display: flex !important; flex-wrap: wrap; gap: 6px; } .yrchip { min-height: 32px; padding: 6px 12px; font-size: 13px; } .kpi-lab { font-size: 11.5px !important; } .logo-credit { font-size: 11px !important; } }</style><style>/* mobile-comfort-v1 */ @media (max-width: 640px) { .yrchips { display: flex !important; flex-wrap: wrap; gap: 6px; } .yrchip { min-height: 32px; padding: 6px 12px; font-size: 13px; } .kpi-lab { font-size: 11.5px !important; } .logo-credit { font-size: 11px !important; } }</style></head>
 <body>
 <header>
   <div class="logobar">
@@ -609,11 +609,12 @@ select#makeSel:hover,select#makeSel:focus{border-color:var(--vibrant);box-shadow
 </div>
   <div class="subpanel" id="sub-data">
   <div class="card">
-    <h3 class="lbh3">Monthly Detail &mdash; by Brand or Model</h3>
+    <h3 class="lbh3">Detail Table &mdash; by Brand or Model</h3>
     <div class="lbfilter lbwrapf">
       <div class="fgrp"><span class="ctl-lbl">View</span><div class="seg" id="detSeg"><button data-s="TIV" class="on">TIV</button><button data-s="PV">PV</button><button data-s="CV">CV</button></div></div>
       <div class="fgrp"><span class="ctl-lbl">Segment</span><select id="detSegMix" class="bsel"></select></div>
-      <div class="fgrp"><span class="ctl-lbl">Year</span><select id="detYear" class="bsel"></select></div>
+      <div class="fgrp"><span class="ctl-lbl">Period</span><div class="seg" id="detMode"><button data-m="month" class="on">Monthly</button><button data-m="year">Yearly</button></div></div>
+      <div class="fgrp" id="detYearGrp"><span class="ctl-lbl">Year</span><select id="detYear" class="bsel"></select></div>
       <div class="fgrp"><span class="ctl-lbl">Drill into brand</span><select id="detBrand" class="bsel"><option value="__ALL__">All brands (rows = brands)</option></select></div>
     </div>
     <div class="detwrap"><table id="detTable" class="dettbl"><thead></thead><tbody></tbody></table></div>
@@ -1455,14 +1456,23 @@ function renderDistTrend(){
  charts.cTrend=new Chart(document.getElementById('cTrend'),{type:'line',data:{labels,datasets:trndSel.map((nm,i)=>({label:DSHORT[nm],data:dataOf(nm),borderColor:bcol(i),backgroundColor:bcol(i),tension:.3,borderWidth:2.4,pointRadius:2,spanGaps:false}))},
   options:{animation:false,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:11,padding:8}},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y==null?'\u2014':fmt(c.parsed.y)+' units')}}},scales:{y:{ticks:{callback:v=>(v/1000)+'k'},grid:{color:'#eef1f7'}},x:{grid:{display:false}}}}});
 }
+function detailAggYear(){
+ const G={},SM=DATA.model_segments||{},segAll=(!detSegMix||detSegMix==='All segments'),byModel=detBrand!=='__ALL__';
+ for(const model in MV_){if(!segAll&&SM[model]!==detSegMix)continue;if(byModel&&MK_[model]!==detBrand)continue;const mk=byModel?model:MK_[model],vs=MV_[model];
+  for(const a of vs){if(detSeg==='PV'&&a[1]!=='P')continue;if(detSeg==='CV'&&a[1]!=='C')continue;const g=G[mk]||(G[mk]=new Array(YF.length).fill(0));YF.forEach((y,yi)=>{const arr=a[3][String(y)];if(!arr)return;let s2=0;for(const x of arr)s2+=x||0;g[yi]+=s2;});}}
+ return G;
+}
 function detailAgg(){
+ if(detMode==='year')return detailAggYear();
  const G={},A=String(detYear),SM=DATA.model_segments||{},segAll=(!detSegMix||detSegMix==='All segments'),byModel=detBrand!=='__ALL__';
  for(const model in MV_){if(!segAll&&SM[model]!==detSegMix)continue;if(byModel&&MK_[model]!==detBrand)continue;const mk=byModel?model:MK_[model],vs=MV_[model];
   for(const a of vs){if(detSeg==='PV'&&a[1]!=='P')continue;if(detSeg==='CV'&&a[1]!=='C')continue;const arr=a[3][A];if(!arr)continue;const g=G[mk]||(G[mk]=new Array(12).fill(0));for(let j=0;j<12&&j<arr.length;j++)g[j]+=arr[j]||0;}}
  return G;
 }
-let detBrand='__ALL__';
+let detBrand='__ALL__', detMode='month';
 function renderDetail(){
+ document.querySelectorAll('#detMode button').forEach(b=>{b.classList.toggle('on',b.dataset.m===detMode);b.onclick=()=>{detMode=b.dataset.m;renderDetail();};});
+ const yg=document.getElementById('detYearGrp');if(yg)yg.style.display=detMode==='year'?'none':'';
  const ys=document.getElementById('detYear');
  const sm=document.getElementById('detSegMix');
  const bs=document.getElementById('detBrand');if(bs&&bs.options.length<=1){(DATA.make_list||[]).slice().sort((a,b)=>a.localeCompare(b)).forEach(mk=>{const o=document.createElement('option');o.value=mk;o.textContent=mk;bs.appendChild(o);});bs.onchange=e=>{detBrand=e.target.value;renderDetail();};}
@@ -1471,11 +1481,12 @@ function renderDetail(){
   document.querySelectorAll('#detSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#detSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');detSeg=b.dataset.s;renderDetail();});}
  else {ys.value=detYear;sm.value=detSegMix;}
  const G=detailAgg(), dash=v=>v?fmt(v):'\u2013';
- const makes=detBrand==='__ALL__'?(DATA.make_list||[]).slice().sort((a,b)=>a.localeCompare(b)):Object.keys(G).sort((a,b)=>{const ta=G[a].reduce((x,y)=>x+y,0),tb=G[b].reduce((x,y)=>x+y,0);return tb-ta;});
- let head='<tr><th class="detbrand"></th><th class="detyear" colspan="12">'+(detYear===2026?'2026 (Jan–Aug YTD)':detYear)+(detBrand==='__ALL__'?'':' \u00b7 '+detBrand)+'</th><th class="dettot"></th></tr>';
- head+='<tr><th class="detbrand">'+(detBrand==='__ALL__'?'Brand':'Model')+'</th>'+MN3.map(m=>'<th>'+m+'</th>').join('')+'<th class="dettot">Total</th></tr>';
- const gt=new Array(12).fill(0);let body='';
- makes.forEach(mk=>{const a=G[mk]||new Array(12).fill(0);let tot=0;for(let i=0;i<12;i++){tot+=a[i];gt[i]+=a[i];}
+ const makes=detBrand==='__ALL__'?Object.keys(G).filter(k=>G[k].some(v=>v>0)).sort((a,b)=>a.localeCompare(b)):Object.keys(G).sort((a,b)=>{const ta=G[a].reduce((x,y)=>x+y,0),tb=G[b].reduce((x,y)=>x+y,0);return tb-ta;});
+ const yearMode=detMode==='year', NC=yearMode?YF.length:12, cols=yearMode?YF.map(y=>y===2026?'2026*':String(y)):MN3;
+ let head='<tr><th class="detbrand"></th><th class="detyear" colspan="'+NC+'">'+(yearMode?('Annual registrations 2009\u20132026 (* 2026 = Jan–Aug YTD)'):(detYear===2026?'2026 (Jan–Aug YTD)':detYear))+(detBrand==='__ALL__'?'':' \u00b7 '+detBrand)+'</th><th class="dettot"></th></tr>';
+ head+='<tr><th class="detbrand">'+(detBrand==='__ALL__'?'Brand':'Model')+'</th>'+cols.map(m=>'<th>'+m+'</th>').join('')+'<th class="dettot">Total</th></tr>';
+ const gt=new Array(NC).fill(0);let body='';
+ makes.forEach(mk=>{const a=G[mk]||new Array(NC).fill(0);let tot=0;for(let i=0;i<NC;i++){tot+=a[i];gt[i]+=a[i];}
   body+='<tr><td class="detbrand">'+mk+'</td>'+a.map(v=>'<td>'+dash(v)+'</td>').join('')+'<td class="dettot">'+dash(tot)+'</td></tr>';});
  const gtot=gt.reduce((s,v)=>s+v,0);
  body+='<tr class="detgrand"><td class="detbrand">'+(detBrand==='__ALL__'?'Total TIV':'Total '+detBrand)+'</td>'+gt.map(v=>'<td>'+dash(v)+'</td>').join('')+'<td class="dettot">'+dash(gtot)+'</td></tr>';
